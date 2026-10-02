@@ -1,9 +1,12 @@
 # AIML Recruitment 2026 — Assessment Submission
 
-**Candidate Details:** Aryan Singh
+**Candidate Details:**
+- **Name:** Aryan Singh
+- **Institution:** SRM Institute of Science and Technology
+- **Degree / Specialization:** B.Tech in Computer Science and Engineering (Artificial Intelligence and Machine Learning)
+- **Year / Batch:** Class of 2026
 
 **Tasks Completed:**
-- **Task 1:** Air Quality (AQI) Prediction & Forecasting Analysis
 - **Task 2:** Neural Network — MNIST Handwritten Digit Classification (TensorFlow / Keras)
 
 ---
@@ -23,8 +26,15 @@ The implementation strictly avoids high-level convolutional shortcuts (CNNs) in 
 
 ## 2. Technical Approach & Architecture
 
-### A. Preprocessing Pipeline
-- **Raw Input:** $28 \times 28$ grayscale images with integer pixels in $[0, 255]$ ($60,000$ training, $10,000$ test).
+### A. Dataset Provenance & Ingestion
+- **Primary Dataset Provenance:** MNIST Handwritten Digit Database
+- **Original Source Attribution:** Yann LeCun, Corinna Cortes, and Christopher J.C. Burges ([https://yann.lecun.org/exdb/mnist/](https://yann.lecun.org/exdb/mnist/)).
+- **Download Source:** Canonical CVDFoundation mirror ([https://github.com/cvdfoundation/mnist](https://github.com/cvdfoundation/mnist)).
+- **Loading Method:** Custom binary IDX format parser (`src/mnist_parser.py`) implementing big-endian byte unpack of magic numbers (`2051` for images, `2049` for labels), sample counts ($60,000$ train / $10,000$ test), and pixel dimensions ($28 \times 28$).
+- *Provenance Note:* This project uses the canonical MNIST Handwritten Digit Database referenced by the assignment. The original MNIST IDX files are obtained from the CVDFoundation mirror of the database and parsed locally using a project-specific IDX parser. The dataset provenance is attributed to the original MNIST database associated with Yann LeCun, Corinna Cortes, and Christopher J.C. Burges.
+
+### B. Preprocessing Pipeline
+- **Raw Input:** $28 \times 28$ grayscale images with integer pixels in $[0, 255]$ ($60,000$ training, $10,000$ test, `uint8`).
 - **Pixel Normalization:** Pixels are cast to `float32` and scaled to $[0.0, 1.0]$ by dividing by $255.0$. This keeps input magnitudes manageable and supports stable optimization.
 - **Label Representation:** Preserved as scalar integer class IDs ($0, 1, \dots, 9$). One-hot encoding is avoided to minimize memory overhead and utilize TensorFlow's native `sparse_categorical_crossentropy`.
 - **Architectural Flattening:** Images are passed as $(28, 28)$ tensors directly to the model's explicit `Flatten()` layer, keeping the spatial-to-vector transformation fully transparent within the computational graph.
@@ -94,10 +104,13 @@ From the test set evaluation ($10,000$ unseen samples):
 - **Digit 9:** Precision: $0.9750$, Recall: $0.9673$, F1: $0.9711$ ($1,009$ samples)
 - **Overall Test Accuracy:** **97.69%** | **Macro Average F1:** **0.9768**
 
+### Controlled Comparison & Empirical Takeaway
+In this controlled run, doubling the hidden-layer width did not improve test-set generalization ($-0.16$ percentage points in this run: $97.69\% \to 97.53\%$), while increasing parameter count by $100\%$ ($101,770 \to 203,530$) and measured training time by $26.5\%$ ($10.70\text{s} \to 13.54\text{s}$). Repeated-seed experiments would be required before drawing broader conclusions about model-width sensitivity.
+
 ---
 
 ## 5. Key Learnings
-1. **Diminishing Returns of Raw Layer Width:** Doubling the hidden layer capacity from 128 to 256 neurons doubled the network's parameter count ($101,770 \to 203,530$) and increased training time by $26.5\%$, but produced virtually identical test accuracy ($97.69\% \to 97.53\%$). On clean datasets like MNIST, dense layer representational capacity is quickly saturated.
+1. **Diminishing Returns of Raw Layer Width:** In this controlled run, doubling the hidden-layer width ($128 \to 256$ neurons) did not improve test-set generalization ($-0.16$ percentage points in this run), while increasing parameter count by $100\%$ and measured training time by $26.5\%$. Repeated-seed experiments would be required before drawing broader conclusions about model-width sensitivity.
 2. **Structural Error Clustering via Confusion Analysis:** Evaluating the empirical confusion matrix demonstrated that misclassifications are not randomly distributed across digit classes; they concentrate predictably on topologically similar stroke patterns (such as $7 \leftrightarrow 2$, $4 \leftrightarrow 9$, and $9 \leftrightarrow 8$).
 3. **Architectural Transparency:** Encapsulating the $28 \times 28 \to 784$ vector transformation within a Keras `Flatten()` layer rather than pre-flattening arrays in NumPy keeps the pipeline end-to-end differentiable and transparently defines where 2D spatial locality is discarded.
 
@@ -108,7 +121,7 @@ From the test set evaluation ($10,000$ unseen samples):
 | Challenge Encountered | Root Cause | Engineering Solution Implemented |
 |---|---|---|
 | **Keras 3 / Matplotlib Sandbox Permission Denial** | Under restricted or sandboxed environments, default user home paths (`~/.keras` and `~/.matplotlib`) can trigger `PermissionError: Operation not permitted`. | Dynamically redirected `KERAS_HOME` and `MPLCONFIGDIR` to local workspace cache directories (`.keras_cache` and `.mpl_cache`) in `src/config.py` and `tests/conftest.py` before third-party library imports. |
-| **Network Isolation on External Datasets** | In sandbox execution modes where outbound internet access to Google Cloud Storage is disabled, `tf.keras.datasets.mnist.load_data()` fails to fetch `mnist.npz`. | `src/data.py` first loads a local `data/mnist.npz` cache when available; without that cache, it falls back to Keras's normal download path. |
+| **Canonical Dataset Acquisition & Provenance** | The historical Yann LeCun web page (`/exdb/mnist/`) is frequently unreachable or returns 404 in modern environments. | Built a dedicated data acquisition layer (`src/mnist_download.py`) downloading the four original IDX compressed archives directly from the canonical CVDFoundation mirror, accompanied by a custom binary parser (`src/mnist_parser.py`) that unpacks the big-endian IDX byte streams locally. |
 | **Headless Notebook Execution without Interactive Server** | Standard Jupyter kernel discovery was blocked in sandboxed CLI mode when attempting headless execution. | Developed a robust programmatic runner (`execute_notebook.py`) using standard library tools that walks every code cell, records execution states, and embeds true output streams and base64 PNG charts directly into the notebook. |
 
 ---
@@ -116,7 +129,7 @@ From the test set evaluation ($10,000$ unseen samples):
 ## 7. Project Structure
 
 ```
-AIML-Recruitment-2026-Aryan/
+AIML-Recruitment-2026-Aryan-Singh/
 ├── README.md                          # Comprehensive submission report
 ├── requirements.txt                   # Dependency definitions
 ├── .gitignore                         # Configured ignore patterns
@@ -126,6 +139,8 @@ AIML-Recruitment-2026-Aryan/
 │   ├── __init__.py
 │   ├── config.py                      # Hyperparameters, seeds, and paths
 │   ├── data.py                        # Dataset loading, stats, and normalization
+│   ├── mnist_download.py              # Canonical mirror acquisition & local SHA-256 fingerprinting
+│   ├── mnist_parser.py                # Binary IDX unpacker for images (2051) and labels (2049)
 │   ├── model.py                       # Input -> Flatten -> Dense(ReLU) -> Dense(Softmax)
 │   ├── train.py                       # Training loop, seed locking, wall-clock timing
 │   ├── evaluate.py                    # Multi-metric evaluation and confusion diagnosis
@@ -135,10 +150,11 @@ AIML-Recruitment-2026-Aryan/
 ├── notebooks/
 │   └── mnist_neural_network.ipynb     # Demonstration notebook with embedded outputs
 │
-├── tests/                             # Smoke test suite
+├── tests/                             # Comprehensive test suite (19 passing tests)
 │   ├── __init__.py
 │   ├── conftest.py                    # Test harness cache environment setup
 │   ├── test_data.py                   # Preprocessing shape and range tests
+│   ├── test_idx_parser.py             # Binary IDX parser and canonical provenance tests
 │   ├── test_model.py                  # Architecture and output dimension tests
 │   └── test_pipeline.py               # End-to-end synthetic training and metric validation
 │

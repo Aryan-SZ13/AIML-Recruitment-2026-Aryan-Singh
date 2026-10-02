@@ -7,29 +7,41 @@ import numpy as np
 import tensorflow as tf
 
 
-def load_mnist(path="data/mnist.npz"):
+from src.mnist_parser import load_mnist_raw_from_idx
+from src.mnist_download import download_mnist_raw
+
+def load_mnist(raw_dir="data/raw"):
     """
-    Load raw MNIST dataset.
-    Checks local file path relative to the project root first for offline and
-    sandbox reproducibility; falls back to tf.keras.datasets.mnist.load_data().
+    Load raw MNIST dataset from original IDX binary files.
+    Ensures raw IDX files are downloaded from CVDFoundation mirror,
+    and parses them using the custom project IDX parser.
+    Falls back to legacy local archive if available.
 
     Args:
-        path (str): Relative or absolute path to local mnist.npz archive.
+        raw_dir (str): Path to raw IDX directory.
 
     Returns:
         tuple: ((x_train, y_train), (x_test, y_test)) containing raw uint8 images
                and integer scalar labels (0-9).
     """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    full_path = path if os.path.isabs(path) else os.path.join(project_root, path)
+    full_raw_dir = raw_dir if os.path.isabs(raw_dir) else os.path.join(project_root, raw_dir)
 
-    if os.path.exists(full_path):
-        with np.load(full_path, allow_pickle=True) as data:
-            x_train, y_train = data["x_train"], data["y_train"]
-            x_test, y_test = data["x_test"], data["y_test"]
-            return (x_train, y_train), (x_test, y_test)
+    # 1. Primary path: Original IDX files via custom parser
+    try:
+        if not os.path.exists(os.path.join(full_raw_dir, "train-images-idx3-ubyte.gz")):
+            download_mnist_raw(target_dir=full_raw_dir)
+        return load_mnist_raw_from_idx(raw_dir=full_raw_dir)
+    except Exception as e:
+        print(f"Notice: Loading from raw IDX encountered {e}; trying local cache fallback...")
 
-    return tf.keras.datasets.mnist.load_data()
+    # 2. Local npz cache fallback
+    npz_path = os.path.join(project_root, "data/mnist.npz")
+    if os.path.exists(npz_path):
+        with np.load(npz_path, allow_pickle=True) as data:
+            return (data["x_train"], data["y_train"]), (data["x_test"], data["y_test"])
+
+    raise FileNotFoundError("Could not locate or load raw MNIST IDX files.")
 
 
 def preprocess_images(images):
@@ -46,18 +58,18 @@ def preprocess_images(images):
     return images.astype(np.float32) / 255.0
 
 
-def load_and_preprocess_data(path="data/mnist.npz"):
+def load_and_preprocess_data(raw_dir="data/raw"):
     """
-    Loads raw MNIST and normalizes images while preserving integer class labels (0-9).
+    Loads raw MNIST from original IDX files and normalizes images while preserving integer class labels (0-9).
     No one-hot encoding is applied; compatible with sparse_categorical_crossentropy.
 
     Args:
-        path (str): Relative or absolute path to local mnist.npz archive.
+        raw_dir (str): Relative or absolute path to raw IDX directory.
 
     Returns:
         tuple: ((x_train_norm, y_train), (x_test_norm, y_test))
     """
-    (x_train, y_train), (x_test, y_test) = load_mnist(path=path)
+    (x_train, y_train), (x_test, y_test) = load_mnist(raw_dir=raw_dir)
     x_train_norm = preprocess_images(x_train)
     x_test_norm = preprocess_images(x_test)
     return (x_train_norm, y_train), (x_test_norm, y_test)

@@ -30,10 +30,12 @@ ENV/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Dataset cache (downloadable from the standard Keras MNIST source when absent)
+# Dataset raw archive and caches (downloaded on demand from canonical CVDF mirror)
 data/
+outputs/
 .keras_cache/
 .mpl_cache/
+.pytest_cache/
 .jupyter_data/
 .jupyter_runtime/
 .jupyter_config/
