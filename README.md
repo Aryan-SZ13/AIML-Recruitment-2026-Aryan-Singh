@@ -186,18 +186,14 @@ Each label is an integer class ID from 0 to 9 identifying the ground-truth digit
 
 ---
 
-## Part B – Data Preprocessing
+## Part B — Data Preprocessing
 
-- Load the MNIST dataset.
-- Normalize the image pixel values.
-- Reshape/flatten the images if required by your model.
-- Prepare the training and testing data.
-- Briefly explain why the preprocessing steps are required.
+We load the raw MNIST IDX files, normalize the pixel values, keep the images as 28×28 arrays, and use Flatten inside the model before the Dense layers.
 
-### 1. Load the MNIST dataset
-The project loads the original MNIST dataset directly from canonical binary IDX gzip archives via the custom downloader and parser pipeline (`src/mnist_download.py` and `src/mnist_parser.py`). The dataset is retrieved in raw binary format, verifying magic numbers (`2051` for images, `2049` for labels) and parsing them directly into NumPy arrays without relying on high-level framework helper functions.
+### Loading the Dataset
+The dataset is loaded directly from the canonical binary IDX gzip archives via the custom downloader and parser pipeline (`src/mnist_download.py` and `src/mnist_parser.py`). Magic numbers (`2051` for images, `2049` for labels) and dimensions are validated during byte unpacking with Python's `struct.unpack`, producing clean NumPy arrays without relying on high-level framework dataset loaders.
 
-### 2. Normalize the image pixel values
+### Normalization
 - **Raw pixel values:** `0`–`255` (`uint8`)
 - **Type conversion:** Converted to `float32`
 - **Scaling:** Divided by `255.0`
@@ -205,11 +201,11 @@ The project loads the original MNIST dataset directly from canonical binary IDX 
 
 $$\text{pixel\_normalized} = \frac{\text{pixel}}{255.0}$$
 
-### 3. Reshape/flatten the images if required by your model
+### Reshape / Flatten
 The data preprocessing pipeline keeps images as $28 \times 28$ two-dimensional arrays. Dimensional flattening is performed directly inside the neural network model using an explicit Keras `Flatten()` layer rather than as a separate external preprocessing mutation:
 $$28 \times 28 \longrightarrow \text{Flatten} \longrightarrow 784$$
 
-### 4. Prepare the training and testing data
+### Preparing Training, Validation and Test Data
 The dataset is structured deterministically as follows:
 - **Original training set:** $60{,}000$ samples
 - **Validation split during training:** $54{,}000$ training samples ($90\%$) + $6{,}000$ validation samples ($10\%$) held out during model fitting
@@ -217,7 +213,7 @@ The dataset is structured deterministically as follows:
 - **Labels:** Retained as integer class IDs `0`–`9` (`int32`)
 - **Loss function:** `sparse_categorical_crossentropy` (consumes integer scalar class IDs directly)
 
-### 5. Briefly explain why the preprocessing steps are required
+### Why These Steps Matter
 - **Loading:** Provides the raw data in a usable, structured array format in memory for model consumption.
 - **Normalization:** Puts pixel values on a smaller numerical scale ($0.0$–$1.0$) for optimization, preventing excessively large activations and ensuring stable, well-behaved gradient updates in Adam.
 - **Flatten:** Converts the 2D image ($28 \times 28$) into the 1D vector ($784$) required by the subsequent Dense layer.
@@ -227,22 +223,9 @@ The dataset is structured deterministically as follows:
 
 ## Part C — Build the Neural Network
 
-### Requirement
+I used a small fully connected MLP so that the purpose of each component remains easy to understand.
 
-Build a simple neural network containing:
-- Input layer
-- At least one hidden layer
-- Output layer
-
-You may use:
-- TensorFlow/Keras
-- PyTorch
-
-The architecture should be simple enough to explain the purpose of each major component.
-
-### Our Implementation
-
-We used TensorFlow/Keras with the following architecture:
+### Architecture
 
 ```
 Input Image (28, 28)
@@ -254,7 +237,7 @@ Dense(128, activation="relu")
 Dense(10, activation="softmax")
 ```
 
-### Purpose of Each Component
+### Components
 
 **Input layer**
 Receives the $28 \times 28$ MNIST image.
@@ -268,7 +251,7 @@ Converts $28 \times 28$ into a $784$-element vector so it can be passed to a Den
 **Output layer**
 10 neurons correspond to digits 0–9. Softmax converts the outputs into class probabilities.
 
-### Parameter Count
+### Parameter Derivation
 
 - **Flatten layer:** $0$ parameters (performs spatial dimension reshape: $28 \times 28 \to 784$).
 - **Hidden Dense layer ($784 \to 128$):**
@@ -307,7 +290,9 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 
 ## Part E — Training
 
-### Baseline Training Setup
+I trained the baseline MLP for 15 epochs using Adam with a learning rate of 0.001, batch size 128, and a 10% validation split.
+
+### Training Setup
 - **Optimizer:** Adam ($\eta = 0.001$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-7}$)
 - **Loss Function:** `sparse_categorical_crossentropy`
 - **Batch Size:** $128$
@@ -315,9 +300,9 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 - **Validation Split:** $10\%$ ($54{,}000$ training samples, $6{,}000$ validation samples)
 - **Master Seed:** `42`
 
-### Measured Training Records (Authoritative Baseline)
+### Training Results
 
-| Metric | Measured Value |
+| Metric | Result |
 | :--- | ---: |
 | **Training Loss** | 0.0125 |
 | **Validation Loss** | 0.0834 |
@@ -325,14 +310,12 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 | **Training Accuracy** | 99.84% |
 | **Validation Accuracy** | 97.95% |
 | **Test Accuracy** | 97.69% |
-| **Generalization Gap (Train - Val Acc)** | +1.89 pp |
-| **Measured Training Time** | 11.88s |
 
 ### Training / Validation Curves
 
 ![Training and validation curves](docs/images/part_e_baseline_training_curves.png)
 
-*Curve Analysis:*
+### What the Curves Show
 - **Loss Convergence:** Both training and validation loss decline steeply during epochs 1–5, then converge smoothly. Training loss reaches $0.0125$ while validation loss stabilizes around $0.0834$.
 - **Generalization Tracking:** Training accuracy progresses from $92.61\%$ to $99.84\%$, while validation accuracy reaches $97.95\%$. The modest $1.89\text{ pp}$ gap between train and validation accuracy confirms that the baseline model learns robust representations without severe overfitting.
 
@@ -340,28 +323,30 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 
 ## Part F — Evaluation
 
-### 1. Test Performance ($10{,}000$ Unseen Test Samples)
+After training, I evaluated the model on the held-out 10,000-image test set.
+
+### Test Performance
 - **Overall Test Accuracy:** **97.69%**
 - **Test Loss:** **0.0803**
 - **Macro-Averaged F1-Score:** **0.9768**
 - **Weighted-Averaged F1-Score:** **0.9769**
 
-### 2. Confusion Matrix Analysis
+### Confusion Matrix
 
 ![Confusion matrix](docs/images/part_f_baseline_confusion_matrix.png)
 
-**Matrix Orientation:**
+### How to Read the Matrix
 - **Rows:** True Ground-Truth Labels ($0$ through $9$).
 - **Columns:** Model Predictions ($0$ through $9$).
 - **Diagonal Cells:** Correct classifications (True Positives).
 - **Off-Diagonal Cells:** Misclassifications (Errors/Confusions).
 
-**Top Observed Confusions:**
+### Observed Confusions
 - True **7** misclassified as **2** ($10$ errors): Caused by cursive horizontal ticks across the stem of handwritten 7s resembling the baseline loop of 2s.
 - True **4** misclassified as **9** ($9$ errors): Caused by closed top loops in rushed handwritten 4s.
 - True **9** misclassified as **4** ($7$ errors): Reciprocal confusion when the top curve of 9 has sharp corners.
 
-### 3. Comprehensive Per-Class Performance
+### Per-Class Performance
 | Digit Class | Precision | Recall | F1-Score | Test Support |
 | :---: | :---: | :---: | :---: | :---: |
 | **0** | 0.9778 | 0.9878 | 0.9827 | 980 |
@@ -378,11 +363,11 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 
 ---
 
-## Part G — Experimentation (6-Dimensional Controlled Ablation Suite)
+## Part G — Experimentation
 
-We ran a **6-dimensional controlled ablation suite** consisting of **11 total configurations** (1 baseline control + 10 single-variable variants) to systematically evaluate architecture and optimization choices.
+I changed six aspects of the model/training setup one at a time while keeping the remaining settings fixed.
 
-**Authoritative Results Source:** All values derive directly from [`outputs/results/experiment_suite_manifest.json`](outputs/results/experiment_suite_manifest.json) recorded from a single deterministic run with master seed `42`:
+All values derive directly from [`outputs/results/experiment_suite_manifest.json`](outputs/results/experiment_suite_manifest.json) recorded from a single deterministic run with master seed `42`:
 
 ![Experiment comparison](docs/images/experiment_suite_comparison.png)
 
@@ -404,103 +389,114 @@ We ran a **6-dimensional controlled ablation suite** consisting of **11 total co
 
 ---
 
-### Detailed Analysis by Experimental Dimension
+### E1 — Number of Hidden Layers (Architecture Depth)
 
-#### E1 — Number of Hidden Layers (Architecture Depth)
-
-##### What did you change?
+**What did you change?**
 Added a second hidden dense layer with 64 units ($784 \to 128 \to 64 \to 10$), increasing total parameter count from $101{,}770$ to $109{,}386$ ($+7.5\%$).
 
-##### What changed in the results?
-- **Observation:** Test accuracy decreased by $0.58\text{ percentage points}$ ($97.69\% \to 97.11\%$), test loss increased by $+0.0406$ ($0.0803 \to 0.1209$), and the train-validation gap widened from $1.89\text{ pp}$ to $2.23\text{ pp}$. Training time was $12.25\text{s}$ compared to baseline $11.88\text{s}$.
-- **Performance Evaluation:** Did the change improve performance? No, test accuracy decreased by $0.58\text{ pp}$ and test loss increased.
+**What changed in the results?**
+- Test accuracy decreased by $0.58\text{ percentage points}$ ($97.69\% \to 97.11\%$).
+- Test loss increased from $0.0803$ to $0.1209$.
+- Train-validation gap widened from $1.89\text{ pp}$ to $2.23\text{ pp}$.
+- Training time was $12.25\text{s}$ compared to baseline $11.88\text{s}$.
+- Did the change improve performance? No, test accuracy decreased by $0.58\text{ pp}$ and test loss increased.
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, adding a second dense layer did not improve test accuracy on flattened MNIST pixels. A single hidden layer of 128 units already has enough capacity to separate digit shapes, while adding a second layer adds parameters and training overhead without providing convolutional feature extraction.
-- **What does this suggest?** For simple 28x28 digit classification, increasing dense layer depth without regularization adds model complexity without improving test accuracy.
+**Why do you think the change affected the model's performance?**
+In this run, adding a second dense layer did not improve test accuracy on flattened MNIST pixels. A single hidden layer of 128 units already has enough capacity to separate digit shapes, while adding a second layer adds parameters and training overhead without providing convolutional feature extraction.
+
+**What I expected:** I expected the second layer might extract higher-level combinations of features and slightly improve accuracy.
+**What I learned:** For simple 28×28 digit classification, increasing dense layer depth without convolutional feature extraction or regularization adds model complexity without improving test accuracy.
 
 ---
 
-#### E2 — Number of Neurons (Layer Width / Capacity)
+### E2 — Number of Neurons (Layer Width / Capacity)
 
-##### What did you change?
+**What did you change?**
 Doubled the width of the single hidden dense layer from 128 to 256 units ($784 \to 256 \to 10$), increasing parameters from $101{,}770$ to $203{,}530$ ($+100.0\%$).
 
-##### What changed in the results?
-- **Observation:** Test accuracy changed by $-0.16\text{ percentage points}$ ($97.69\% \to 97.53\%$), test loss increased slightly ($0.0803 \to 0.0917$), and training time increased to $12.49\text{s}$ ($+5.1\%$ over baseline $11.88\text{s}$).
-- **Performance Evaluation:** Did the change improve performance? No, doubling the width did not yield higher test accuracy.
+**What changed in the results?**
+- Test accuracy changed by $-0.16\text{ percentage points}$ ($97.69\% \to 97.53\%$).
+- Test loss increased slightly ($0.0803 \to 0.0917$).
+- Training time increased to $12.49\text{s}$ ($+5.1\%$ over baseline $11.88\text{s}$).
+- Did the change improve performance? No, doubling width did not improve test accuracy.
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, doubling the width to 256 units resulted in a slight drop of $0.16\text{ pp}$ ($97.69\% \to 97.53\%$). 128 units already provide enough capacity to capture the main handwritten digit patterns. Widening to 256 units without regularization slightly widened the train-validation gap ($2.29\text{ pp}$ vs $1.89\text{ pp}$) without improving test accuracy.
-- **What does this suggest?** Model capacity must be matched to task complexity; excessive width without regularizers yields diminishing returns on compact image datasets.
+**Why do you think the change affected the model's performance?**
+In this run, doubling the width to 256 units resulted in a slight drop of $0.16\text{ pp}$ ($97.69\% \to 97.53\%$). 128 units already provide enough capacity to capture the main handwritten digit patterns. Widening to 256 units without regularization slightly widened the train-validation gap ($2.29\text{ pp}$ vs $1.89\text{ pp}$) without improving test accuracy.
+
+**What I expected:** I expected the doubled capacity to improve accuracy by representing finer digit variations.
+**What I learned:** Model capacity must be matched to task complexity; excessive width without regularizers yields diminishing returns on compact image datasets.
 
 ---
 
-#### E3 — Learning Rate (Optimization Step Size)
+### E3 — Learning Rate (Optimization Step Size)
 
-##### What did you change?
+**What did you change?**
 Evaluated an aggressive rate ($\eta = 0.01$, $10\times$ baseline) and a conservative rate ($\eta = 0.0001$, $0.1\times$ baseline) against the baseline Adam rate ($\eta = 0.001$).
 
-##### What changed in the results?
-- **Observation:**
-  - At $\eta = 0.01$, test accuracy dropped by $1.25\text{ pp}$ ($96.44\%$) and test loss surged to $0.2759$ ($+243\%$ higher than baseline).
-  - At $\eta = 0.0001$, test accuracy dropped by $1.92\text{ pp}$ ($95.77\%$) with test loss at $0.1470$.
-- **Performance Evaluation:** Did the change improve performance? No, both higher ($0.01$) and lower ($0.0001$) learning rates degraded test accuracy relative to the $\eta = 0.001$ baseline.
+**What changed in the results?**
+- At $\eta = 0.01$, test accuracy dropped by $1.25\text{ pp}$ ($96.44\%$) and test loss surged to $0.2759$ ($+243\%$ higher than baseline).
+- At $\eta = 0.0001$, test accuracy dropped by $1.92\text{ pp}$ ($95.77\%$) with test loss at $0.1470$.
+- Did the change improve performance? No, both higher ($0.01$) and lower ($0.0001$) learning rates degraded test accuracy relative to the $\eta = 0.001$ baseline.
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, learning rate 0.01 was too high, causing unstable updates that overshot optimal weights and led to high test loss ($0.2759$). Conversely, 0.0001 was too small, leaving the model underfitted after 15 epochs ($95.77\%$).
-- **What does this suggest?** Learning rate is the primary governing factor for gradient descent dynamics. The default Adam learning rate of $\eta = 0.001$ provides the best balance between optimization stability and convergence speed.
+**Why do you think the change affected the model's performance?**
+In this run, learning rate 0.01 was too high, causing unstable updates that overshot optimal weights and led to high test loss ($0.2759$). Conversely, 0.0001 was too small, leaving the model underfitted after 15 epochs ($95.77\%$).
+
+**What I expected:** I expected 0.0001 to converge more slowly (albeit slowly) and 0.01 to diverge or oscillate.
+**What I learned:** The default Adam learning rate of $\eta = 0.001$ provides the best balance between optimization stability and convergence speed.
 
 ---
 
-#### E4 — Batch Size (Gradient Stochasticity)
+### E4 — Batch Size (Gradient Stochasticity)
 
-##### What did you change?
+**What did you change?**
 Evaluated a small batch size ($B = 32$, $4\times$ smaller) and a large batch size ($B = 512$, $4\times$ larger) against the baseline ($B = 128$).
 
-##### What changed in the results?
-- **Observation:**
-  - At $B = 32$, test accuracy reached the highest value across all variants ($97.87\%$, $+0.18\text{ pp}$), but wall-clock training time increased to $31.00\text{s}$ (vs baseline $11.88\text{s}$).
-  - At $B = 512$, training time dropped to $6.10\text{s}$ ($1.95\times$ faster than baseline), with a minor accuracy change ($97.51\%$, $-0.18\text{ pp}$).
-- **Performance Evaluation:** Did the change improve performance? Small batch ($B = 32$) improved accuracy slightly ($+0.18\text{ pp}$), while large batch ($B = 512$) prioritized execution speed over peak accuracy.
+**What changed in the results?**
+- At $B = 32$, test accuracy reached the highest value across all variants ($97.87\%$, $+0.18\text{ pp}$), but wall-clock training time increased to $31.00\text{s}$ (vs baseline $11.88\text{s}$).
+- At $B = 512$, training time dropped to $6.10\text{s}$ ($1.95\times$ faster than baseline), with a minor accuracy change ($97.51\%$, $-0.18\text{ pp}$).
+- Did the change improve performance? Small batch ($B = 32$) improved accuracy slightly ($+0.18\text{ pp}$), while large batch ($B = 512$) prioritized execution speed over peak accuracy.
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, smaller batches ($B=32$) provide noisier gradient estimates per step that act as a regularizer, helping the model avoid poor local minima and reach $97.87\%$ ($+0.18\text{ pp}$). Larger batches ($B=512$) produce smoother gradients and train faster ($6.10\text{s}$ vs $31.00\text{s}$), but achieve slightly lower accuracy ($97.51\%$).
-- **What does this suggest?** Batch size presents an explicit operational trade-off between statistical regularization (small batch) and hardware vectorization efficiency (large batch).
+**Why do you think the change affected the model's performance?**
+In this run, smaller batches ($B=32$) provide noisier gradient estimates per step that act as a regularizer, helping the model avoid poor local minima and reach $97.87\%$ ($+0.18\text{ pp}$). Larger batches ($B=512$) produce smoother gradients and train faster ($6.10\text{s}$ vs $31.00\text{s}$), but achieve slightly lower accuracy ($97.51\%$).
+
+**What I expected:** I expected smaller batches to have slightly better generalization due to gradient noise, and larger batches to execute much faster.
+**What I learned:** Batch size presents an explicit operational trade-off between statistical regularization (small batch) and hardware vectorization efficiency (large batch).
 
 ---
 
-#### E5 — Number of Epochs (Training Horizon)
+### E5 — Number of Epochs (Training Horizon)
 
-##### What did you change?
+**What did you change?**
 Tested an abbreviated budget ($5$ epochs) and an extended budget ($30$ epochs) against the baseline ($15$ epochs).
 
-##### What changed in the results?
-- **Observation:**
-  - At $5$ epochs, test accuracy reached $97.01\%$ ($-0.68\text{ pp}$) with test loss at $0.0961$, completed in $3.77\text{s}$.
-  - At $30$ epochs, test accuracy reached $97.85\%$ ($+0.16\text{ pp}$), training accuracy reached $99.99\%$, and the train-validation gap expanded to $2.01\text{ pp}$ ($19.85\text{s}$).
-- **Performance Evaluation:** Did the change improve performance? Extended training ($30$ epochs) marginally improved test accuracy ($+0.16\text{ pp}$), while $5$ epochs was insufficient for complete convergence ($-0.68\text{ pp}$).
+**What changed in the results?**
+- At $5$ epochs, test accuracy reached $97.01\%$ ($-0.68\text{ pp}$) with test loss at $0.0961$, completed in $3.77\text{s}$.
+- At $30$ epochs, test accuracy reached $97.85\%$ ($+0.16\text{ pp}$), training accuracy reached $99.99\%$, and the train-validation gap expanded to $2.01\text{ pp}$ ($19.85\text{s}$).
+- Did the change improve performance? Extended training ($30$ epochs) marginally improved test accuracy ($+0.16\text{ pp}$), while $5$ epochs was insufficient for complete convergence ($-0.68\text{ pp}$).
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, 5 epochs was not enough training time for complete convergence ($97.01\%$). Training for 30 epochs gave a small accuracy boost ($97.85\%$, $+0.16\text{ pp}$), but validation loss leveled off, showing diminishing returns after 15 epochs.
-- **What does this suggest?** 15 epochs is an optimal early-stopping point for this baseline architecture, capturing nearly all generalization capacity before overfitting begins to widen the train-validation gap.
+**Why do you think the change affected the model's performance?**
+In this run, 5 epochs was not enough training time for complete convergence ($97.01\%$). Training for 30 epochs gave a small accuracy boost ($97.85\%$, $+0.16\text{ pp}$), but validation loss leveled off, showing diminishing returns after 15 epochs.
+
+**What I expected:** I expected 5 epochs to be undertrained and 30 epochs to show signs of mild overfitting.
+**What I learned:** 15 epochs is an effective stopping point for this baseline architecture, capturing nearly all generalization capacity before overfitting begins to widen the train-validation gap.
 
 ---
 
-#### E6 — Activation Function (Non-Linearity & Gradient Dynamics)
+### E6 — Activation Function (Non-Linearity & Gradient Dynamics)
 
-##### What did you change?
+**What did you change?**
 Replaced the hidden layer's `relu` activation with `sigmoid` and `tanh`, holding all other hyperparameters identical.
 
-##### What changed in the results?
-- **Observation:**
-  - `sigmoid` achieved lower test accuracy ($97.40\%$, $-0.29\text{ pp}$) and higher loss ($0.0868$).
-  - `tanh` achieved $97.75\%$ test accuracy ($+0.06\text{ pp}$) and the lowest test loss across all 11 variants ($0.0728$).
-- **Performance Evaluation:** Did the change improve performance? Tanh slightly improved test accuracy ($+0.06\text{ pp}$) and achieved the lowest loss ($0.0728$), whereas Sigmoid underperformed ($97.40\%$).
+**What changed in the results?**
+- `sigmoid` achieved lower test accuracy ($97.40\%$, $-0.29\text{ pp}$) and higher loss ($0.0868$).
+- `tanh` achieved $97.75\%$ test accuracy ($+0.06\text{ pp}$) and the lowest test loss across all 11 variants ($0.0728$).
+- Did the change improve performance? Tanh slightly improved test accuracy ($+0.06\text{ pp}$) and achieved the lowest loss ($0.0728$), whereas Sigmoid underperformed ($97.40\%$).
 
-##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, Sigmoid achieved lower test accuracy ($97.40\%$) and higher loss ($0.0868$). Sigmoid has a maximum derivative of $0.25$, which shrinks gradients during backpropagation and slows training. In contrast, Tanh outputs range from $-1$ to $1$ (centered around zero), which avoids all-positive activation bias and achieved the lowest test loss ($0.0728$) among tested activations.
-- **What does this suggest?** Zero-centered activations like Tanh and non-saturating activations like ReLU provide substantially superior gradient backpropagation pathways compared to standard Sigmoid for feedforward networks.
+**Why do you think the change affected the model's performance?**
+In this run, Sigmoid achieved lower test accuracy ($97.40\%$) and higher loss ($0.0868$). Sigmoid has a maximum derivative of $0.25$, which shrinks gradients during backpropagation and slows training. In contrast, Tanh outputs range from $-1$ to $1$, which avoids all-positive activation bias and achieved the lowest test loss ($0.0728$) among tested activations.
+
+**What I expected:** I expected Sigmoid to train more slowly due to gradient saturation and ReLU/Tanh to perform comparably.
+**What I learned:** Non-saturating activations like ReLU and zero-centered activations like Tanh provide substantially superior gradient backpropagation pathways compared to standard Sigmoid for feedforward networks.
 
 ---
 
