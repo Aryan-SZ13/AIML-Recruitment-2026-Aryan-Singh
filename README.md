@@ -1,5 +1,9 @@
 # AIML Recruitment 2026 — Assessment Submission
 
+<p align="center">
+  <img src="docs/images/architecture_flowchart.png" alt="System Architecture Flowchart" width="520"/>
+</p>
+
 **Candidate Details:**
 - **Name:** Aryan Singh
 - **Institution:** SRM Institute of Science and Technology
@@ -134,6 +138,10 @@ AIML-Recruitment-2026-Aryan-Singh/
 ├── requirements.txt                   # Dependency definitions
 ├── .gitignore                         # Configured ignore patterns
 ├── main.py                            # Standalone end-to-end execution pipeline
+│
+├── docs/                              # Visual assets and documentation
+│   └── images/
+│       └── architecture_flowchart.png # Pipeline architecture flowchart
 │
 ├── src/                               # Modular Python source package
 │   ├── __init__.py
