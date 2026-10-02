@@ -1,7 +1,11 @@
 # AIML Recruitment 2026 — Assessment Submission
 
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh?utm_source=readme&utm_medium=badge)
+
 <p align="center">
-  <img src="docs/images/architecture_flowchart.png" alt="System Architecture Flowchart" width="520"/>
+  <a href="https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh?utm_source=readme&utm_medium=picture">
+    <img src="https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh/diagram.png" alt="Architecture diagram of aryan-sz13/aiml-recruitment-2026-aryan-singh" width="550"/>
+  </a>
 </p>
 
 **Candidate Details:**
