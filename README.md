@@ -186,27 +186,42 @@ Each label is an integer class ID from 0 to 9 identifying the ground-truth digit
 
 ---
 
-## Part B — Data Preprocessing
+## Part B – Data Preprocessing
 
-### Preprocessing Specifications & Ranges
+- Load the MNIST dataset.
+- Normalize the image pixel values.
+- Reshape/flatten the images if required by your model.
+- Prepare the training and testing data.
+- Briefly explain why the preprocessing steps are required.
 
-| Attribute | Raw Input Data | Normalized Preprocessed Data |
-| :--- | :--- | :--- |
-| **Pixel Intensity Range** | `0` to `255` | `0.0` to `1.0` |
-| **Data Type** | `uint8` | `float32` |
-| **Spatial Image Shape** | `(28, 28)` (preserved) | `(28, 28)` (preserved for model-level Flatten) |
-| **Label Encoding** | Integer Class ID (`0`–`9`, `int32`) | Integer Class ID (`0`–`9`, `int32`) — direct integer targets |
+### 1. Load the MNIST dataset
+The project loads the original MNIST dataset directly from canonical binary IDX gzip archives via the custom downloader and parser pipeline (`src/mnist_download.py` and `src/mnist_parser.py`). The dataset is retrieved in raw binary format, verifying magic numbers (`2051` for images, `2049` for labels) and parsing them directly into NumPy arrays without relying on high-level framework helper functions.
 
-### Mathematical Scaling & Rationale
-$$\text{pixel\_normalized} = \frac{\text{pixel}}{255.0} \in [0.0, 1.0]$$
-- **Optimization Stability:** Division by $255.0$ scales raw pixel values from $[0, 255]$ into a normalized $[0.0, 1.0]$ range, preventing large activations during early training and keeping gradient updates stable in Adam.
-- **Architectural Preservation:** Images remain $28 \times 28$ during preprocessing; spatial dimensionality flattening ($28 \times 28 \to 784$) is cleanly encapsulated within the neural network model via Keras's `Flatten()` layer.
-- **Target Label Representation:** Labels remain integer class IDs 0–9 and are consumed by `sparse_categorical_crossentropy`. Storing labels as integer scalar class identifiers ($y \in \{0, 1, \dots, 9\}$, `int32`) eliminates memory expansion and leverages TensorFlow's direct index lookup.
-- **Deterministic Data Partition:**
-  - Original dataset: $60{,}000$ training images, $10{,}000$ test images.
-  - Training-time split (`validation_split=0.1`): $54{,}000$ training samples ($90\%$) for gradient optimization, $6{,}000$ validation samples ($10\%$) held out for validation monitoring during training.
-  - Held-out test set: $10{,}000$ samples evaluated exclusively post-training.
-  - Random seed: locked at `42` across Python, NumPy, and TensorFlow.
+### 2. Normalize the image pixel values
+- **Raw pixel values:** `0`–`255` (`uint8`)
+- **Type conversion:** Converted to `float32`
+- **Scaling:** Divided by `255.0`
+- **Resulting range:** `0.0`–`1.0`
+
+$$\text{pixel\_normalized} = \frac{\text{pixel}}{255.0}$$
+
+### 3. Reshape/flatten the images if required by your model
+The data preprocessing pipeline keeps images as $28 \times 28$ two-dimensional arrays. Dimensional flattening is performed directly inside the neural network model using an explicit Keras `Flatten()` layer rather than as a separate external preprocessing mutation:
+$$28 \times 28 \longrightarrow \text{Flatten} \longrightarrow 784$$
+
+### 4. Prepare the training and testing data
+The dataset is structured deterministically as follows:
+- **Original training set:** $60{,}000$ samples
+- **Validation split during training:** $54{,}000$ training samples ($90\%$) + $6{,}000$ validation samples ($10\%$) held out during model fitting
+- **Held-out test set:** $10{,}000$ samples evaluated exclusively post-training
+- **Labels:** Retained as integer class IDs `0`–`9` (`int32`)
+- **Loss function:** `sparse_categorical_crossentropy` (consumes integer scalar class IDs directly)
+
+### 5. Briefly explain why the preprocessing steps are required
+- **Loading:** Provides the raw data in a usable, structured array format in memory for model consumption.
+- **Normalization:** Puts pixel values on a smaller numerical scale ($0.0$–$1.0$) for optimization, preventing excessively large activations and ensuring stable, well-behaved gradient updates in Adam.
+- **Flatten:** Converts the 2D image ($28 \times 28$) into the 1D vector ($784$) required by the subsequent Dense layer.
+- **Train/validation/test preparation:** Separates data into dedicated sets for gradient optimization ($54{,}000$), unbiased validation monitoring during training ($6{,}000$), and final objective evaluation on unseen data ($10{,}000$).
 
 ---
 
