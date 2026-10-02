@@ -140,13 +140,14 @@ The end-to-end engineering pipeline is structured as follows:
 
 ## Visual Results
 
-The project produces three primary diagnostic visual artifacts:
+The project produces primary visual artifacts:
 
 | Visual Artifact | File Path | Focus |
 | :--- | :--- | :--- |
-| **1. Training / Validation Curves** | `docs/images/part_e_baseline_training_curves.png` | Loss convergence and generalization gap tracking |
-| **2. Confusion Matrix Heatmap** | `docs/images/part_f_baseline_confusion_matrix.png` | Per-class true vs predicted distributions and confusion pairs |
-| **3. 6-Dimensional Ablation Suite** | `docs/images/experiment_suite_comparison.png` | Systematic benchmark comparison across all 11 model configurations |
+| **1. Neural Network Architecture** | `docs/images/part_c_neural_network_architecture.png` | Layer dimensions, transformations, and parameter breakdown |
+| **2. Training / Validation Curves** | `docs/images/part_e_baseline_training_curves.png` | Loss convergence and generalization gap tracking |
+| **3. Confusion Matrix Heatmap** | `docs/images/part_f_baseline_confusion_matrix.png` | Per-class true vs predicted distributions and confusion pairs |
+| **4. 6-Dimensional Ablation Suite** | `docs/images/experiment_suite_comparison.png` | Systematic benchmark comparison across all 11 model configurations |
 
 ---
 
@@ -219,6 +220,8 @@ The dataset is structured deterministically as follows:
 I used a small fully connected MLP so that the purpose of each component remains easy to understand.
 
 ### Architecture
+
+![Neural Network Architecture](docs/images/part_c_neural_network_architecture.png)
 
 ```
 Input Image (28, 28)
