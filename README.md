@@ -84,7 +84,16 @@ class node_mnist toneIndigo
 
 ## Tasks Completed
 - **Task 2 — Neural Network:** COMPLETED
- 
+
+## Kaggle
+
+[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)][kaggle-notebook]
+
+**Kaggle Notebook:** [MNIST Neural Network — From Raw IDX Files to Controlled Experiments][kaggle-notebook]
+
+The Kaggle notebook provides an interactive showcase of the model training pipeline, confusion matrix diagnostics, and 6-dimensional ablation suite in a cloud environment. This GitHub repository remains the primary engineering project containing all modular source code, unit tests, and reproducibility pipelines.
+
+[kaggle-notebook]: https://www.kaggle.com/code/aryansz13/kagglenotebook1331
 
 ## Problem Statement
 Build and analyze a simple neural network capable of classifying handwritten MNIST digits 0–9, while understanding the dataset, preprocessing, architecture, activations, training behavior, evaluation, and controlled model/training changes.
