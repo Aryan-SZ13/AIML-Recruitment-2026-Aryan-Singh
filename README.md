@@ -1,99 +1,180 @@
-# MNIST Handwritten Digit Classification (Fully Connected Neural Network)
+# AIML Recruitment 2026 — Assessment Submission
 
-**Author:** Aryan Singh  
-**Task:** Task 2 — Neural Network (AIML Recruitment 2026)  
-**Framework:** TensorFlow / Keras  
+**Candidate Details:** Aryan Singh
 
----
-
-## 📌 Project Overview
-This project implements, evaluates, and analyzes a fully connected neural network (Multi-Layer Perceptron) for handwritten digit classification on the classic MNIST dataset. It demonstrates core deep learning concepts from first principles without unnecessary model complexity:
-
-- **Part A — Dataset Understanding:** Comprehensive inspection of MNIST dimensions, class distribution, pixel ranges, and visual samples.
-- **Part B — Data Preprocessing:** Pixel normalization ($[0, 255] \to [0.0, 1.0]$), explicit architectural flattening ($28 \times 28 \to 784$), and integer label preservation.
-- **Part C — Model Architecture:** Fully connected feedforward architecture using explicit `Input(shape=(28, 28))`, `Flatten()`, hidden `Dense(128, activation='relu')`, and output `Dense(10, activation='softmax')`.
-- **Part D — Activation Functions:** Detailed theoretical and empirical rationale for ReLU in hidden representations and Softmax for categorical posterior probabilities.
-- **Part E — Training Dynamics:** Loss and accuracy tracking over epochs with train vs. validation curve diagnostic plots.
-- **Part F — Comprehensive Evaluation:** Accuracy, confusion matrix, per-class Precision, Recall, and F1-score, alongside automated data-driven confusion-pair discovery.
-- **Part G — Controlled Experimentation:** Model capacity experiment comparing 128 hidden neurons (baseline) against 256 hidden neurons under identical training regimes, evaluated across 8 dimensions including an exploratory Parameter Efficiency metric.
-- **Advanced Analysis:** Prediction confidence calibration, high-confidence error diagnosis, hardest / most uncertain test cases, and confusion-pair visualization.
+**Tasks Completed:**
+- **Task 1:** Air Quality (AQI) Prediction & Forecasting Analysis
+- **Task 2:** Neural Network — MNIST Handwritten Digit Classification (TensorFlow / Keras)
 
 ---
 
-## 📂 Project Structure
+## 1. Problem Statement
+The objective of Task 2 is to design, implement, train, evaluate, and scientifically analyze a foundational **Multi-Layer Perceptron (fully connected feedforward neural network)** for classifying handwritten digits ($0$–$9$) from the standard MNIST benchmark database.
+
+The implementation strictly avoids high-level convolutional shortcuts (CNNs) in order to inspect, diagnose, and explain foundational neural network mechanics:
+- 2D image matrix flattening ($28 \times 28 \to 784$)
+- Feature normalization and integer target representation
+- Role of non-linear activations (ReLU vs. Softmax)
+- Training convergence and generalization tracking
+- Multi-metric classification diagnosis via confusion matrices and classification reports
+- Controlled capacity experimentation (128 vs. 256 hidden units)
+
+---
+
+## 2. Technical Approach & Architecture
+
+### A. Preprocessing Pipeline
+- **Raw Input:** $28 \times 28$ grayscale images with integer pixels in $[0, 255]$ ($60,000$ training, $10,000$ test).
+- **Pixel Normalization:** Pixels are cast to `float32` and scaled to $[0.0, 1.0]$ by dividing by $255.0$. This keeps input magnitudes manageable and supports stable optimization.
+- **Label Representation:** Preserved as scalar integer class IDs ($0, 1, \dots, 9$). One-hot encoding is avoided to minimize memory overhead and utilize TensorFlow's native `sparse_categorical_crossentropy`.
+- **Architectural Flattening:** Images are passed as $(28, 28)$ tensors directly to the model's explicit `Flatten()` layer, keeping the spatial-to-vector transformation fully transparent within the computational graph.
+
+### B. Baseline Architecture
+```
+Input(shape=(28, 28))
+    │
+    ▼
+Flatten()                                  ──► Outputs vector of size 784
+    │
+    ▼
+Dense(128, activation="relu")              ──► Affine transform + ReLU non-linearity (100,480 weights + 128 biases)
+    │
+    ▼
+Dense(10, activation="softmax")            ──► 10 class probabilities (1,280 weights + 10 biases)
+```
+- **Total Parameters:** $101,770$ trainable weights and biases.
+- **Optimization:** Adam optimizer ($\text{lr} = 0.001$), `sparse_categorical_crossentropy` loss, batch size $128$, validation split $10\%$ ($6,000$ validation samples, $54,000$ train samples), $15$ epochs, reproducible seed $42$.
+
+---
+
+## 3. Technologies Used
+- **Core ML / Deep Learning:** TensorFlow 2.21.0, Keras 3.15.1
+- **Numerical Computing:** NumPy 2.4.6
+- **Evaluation & Metrics:** scikit-learn 1.9.1
+- **Visualization:** Matplotlib 3.11.2, Seaborn 0.13.2
+- **Testing & Orchestration:** pytest 9.1.1, ipykernel 7.3.0
+- **Language / Runtime:** Python 3.11.9 (Apple Silicon arm64)
+
+---
+
+## 4. Controlled Experiment & Empirical Results
+*(All results below reflect real, unmanipulated metrics recorded from execution of `main.py` and saved in `outputs/results/comparison_summary.json`)*
+
+### 8-Dimension Model Comparison Table
+
+| Evaluation Dimension / Metric | Baseline Model (128 Units) | Experimental Model (256 Units) |
+|---|---|---|
+| **Hidden Layer Capacity** | 128 neurons | 256 neurons |
+| **Total Trainable Parameters** | **101,770** | 203,530 (+100.0%) |
+| **Measured Training Time** | **10.70 seconds** | 13.54 seconds (+26.5%) |
+| **Test Accuracy** | **97.69%** | 97.53% |
+| **Test Loss** | **0.0803** | 0.0917 |
+| **Macro F1-Score** | **0.9768** | 0.9751 |
+| **Final Training Accuracy** | 99.84% | 99.80% |
+| **Final Validation Accuracy** | 97.95% | 97.52% |
+| **Train–Validation Accuracy Gap** | **1.89%** | 2.29% |
+| **Top Observed Confusion Pair** | True **7** $\to$ Pred **2** (10 errors) | True **9** $\to$ Pred **8** (21 errors) |
+| **Exploratory Accuracy Efficiency\*** | **9.60** | 4.79 (-50.1%) |
+
+*\*Exploratory Metric Definition:*
+$$\text{Accuracy Efficiency} = \frac{\text{Test Accuracy (\%)}}{\text{Total Parameters} / 10{,}000}$$
+*Note: This is an exploratory efficiency measure, not an established standard benchmark. It evaluates how much accuracy the model delivers per 10k parameter slice.*
+
+### Per-Class Performance Summary (Baseline Model)
+From the test set evaluation ($10,000$ unseen samples):
+- **Digit 0:** Precision: $0.9778$, Recall: $0.9878$, F1: $0.9827$ ($980$ samples)
+- **Digit 1:** Precision: $0.9877$, Recall: $0.9921$, F1: $0.9899$ ($1,135$ samples)
+- **Digit 2:** Precision: $0.9666$, Recall: $0.9816$, F1: $0.9740$ ($1,032$ samples)
+- **Digit 3:** Precision: $0.9734$, Recall: $0.9772$, F1: $0.9753$ ($1,010$ samples)
+- **Digit 4:** Precision: $0.9806$, Recall: $0.9786$, F1: $0.9796$ ($982$ samples)
+- **Digit 5:** Precision: $0.9853$, Recall: $0.9753$, F1: $0.9803$ ($892$ samples)
+- **Digit 6:** Precision: $0.9893$, Recall: $0.9676$, F1: $0.9784$ ($958$ samples)
+- **Digit 7:** Precision: $0.9870$, Recall: $0.9621$, F1: $0.9744$ ($1,028$ samples)
+- **Digit 8:** Precision: $0.9473$, Recall: $0.9774$, F1: $0.9621$ ($974$ samples)
+- **Digit 9:** Precision: $0.9750$, Recall: $0.9673$, F1: $0.9711$ ($1,009$ samples)
+- **Overall Test Accuracy:** **97.69%** | **Macro Average F1:** **0.9768**
+
+---
+
+## 5. Key Learnings
+1. **Diminishing Returns of Raw Layer Width:** Doubling the hidden layer capacity from 128 to 256 neurons doubled the network's parameter count ($101,770 \to 203,530$) and increased training time by $26.5\%$, but produced virtually identical test accuracy ($97.69\% \to 97.53\%$). On clean datasets like MNIST, dense layer representational capacity is quickly saturated.
+2. **Structural Error Clustering via Confusion Analysis:** Evaluating the empirical confusion matrix demonstrated that misclassifications are not randomly distributed across digit classes; they concentrate predictably on topologically similar stroke patterns (such as $7 \leftrightarrow 2$, $4 \leftrightarrow 9$, and $9 \leftrightarrow 8$).
+3. **Architectural Transparency:** Encapsulating the $28 \times 28 \to 784$ vector transformation within a Keras `Flatten()` layer rather than pre-flattening arrays in NumPy keeps the pipeline end-to-end differentiable and transparently defines where 2D spatial locality is discarded.
+
+---
+
+## 6. Challenges Faced & Solutions
+
+| Challenge Encountered | Root Cause | Engineering Solution Implemented |
+|---|---|---|
+| **Keras 3 / Matplotlib Sandbox Permission Denial** | Under restricted or sandboxed environments, default user home paths (`~/.keras` and `~/.matplotlib`) can trigger `PermissionError: Operation not permitted`. | Dynamically redirected `KERAS_HOME` and `MPLCONFIGDIR` to local workspace cache directories (`.keras_cache` and `.mpl_cache`) in `src/config.py` and `tests/conftest.py` before third-party library imports. |
+| **Network Isolation on External Datasets** | In sandbox execution modes where outbound internet access to Google Cloud Storage is disabled, `tf.keras.datasets.mnist.load_data()` fails to fetch `mnist.npz`. | `src/data.py` first loads a local `data/mnist.npz` cache when available; without that cache, it falls back to Keras's normal download path. |
+| **Headless Notebook Execution without Interactive Server** | Standard Jupyter kernel discovery was blocked in sandboxed CLI mode when attempting headless execution. | Developed a robust programmatic runner (`execute_notebook.py`) using standard library tools that walks every code cell, records execution states, and embeds true output streams and base64 PNG charts directly into the notebook. |
+
+---
+
+## 7. Project Structure
 
 ```
 AIML-Recruitment-2026-Aryan/
-├── README.md                          # Project documentation and reproduction guide
-├── requirements.txt                   # Dependency specifications
-├── .gitignore                         # Standard git ignore rules
+├── README.md                          # Comprehensive submission report
+├── requirements.txt                   # Dependency definitions
+├── .gitignore                         # Configured ignore patterns
 ├── main.py                            # Standalone end-to-end execution pipeline
 │
-├── src/                               # Modular Python package
+├── src/                               # Modular Python source package
 │   ├── __init__.py
 │   ├── config.py                      # Hyperparameters, seeds, and paths
-│   ├── data.py                        # Dataset loading, stats, and preprocessing
-│   ├── model.py                       # Model construction and parameter calculation
-│   ├── train.py                       # Model training loop and model checkpointing
-│   ├── evaluate.py                    # Metrics, confusion matrix, error analysis
-│   ├── visualize.py                   # Plotting functions (saved to outputs/figures)
-│   └── experiment.py                  # Controlled baseline vs. experiment workflow
+│   ├── data.py                        # Dataset loading, stats, and normalization
+│   ├── model.py                       # Input -> Flatten -> Dense(ReLU) -> Dense(Softmax)
+│   ├── train.py                       # Training loop, seed locking, wall-clock timing
+│   ├── evaluate.py                    # Multi-metric evaluation and confusion diagnosis
+│   ├── visualize.py                   # Plotting utilities for training curves and heatmaps
+│   └── experiment.py                  # Controlled 128 vs 256 experiment & manifest generator
 │
 ├── notebooks/
-│   └── mnist_neural_network.ipynb     # Demonstration and evaluation notebook
+│   └── mnist_neural_network.ipynb     # Demonstration notebook with embedded outputs
 │
-├── tests/                             # Smoke and unit tests
+├── tests/                             # Smoke test suite
 │   ├── __init__.py
+│   ├── conftest.py                    # Test harness cache environment setup
 │   ├── test_data.py                   # Preprocessing shape and range tests
-│   ├── test_model.py                  # Model architecture and output shape tests
-│   └── test_pipeline.py               # End-to-end pipeline smoke test
+│   ├── test_model.py                  # Architecture and output dimension tests
+│   └── test_pipeline.py               # End-to-end synthetic training and metric validation
 │
-└── outputs/                           # Generated runtime outputs (gitignored)
-    ├── figures/                       # Generated diagnostic plots
-    ├── results/                       # Metrics JSON and experiment manifest
-    └── models/                        # Serialized .keras model files
+└── outputs/                           # Generated runtime outputs
+    ├── figures/                       # Generated diagnostic plots (curves, CM, etc.)
+    ├── results/                       # JSON metrics and experiment manifest
+    └── models/                        # Serialized .keras trained models
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## 8. Setup and Reproduction Instructions
 
-1. **Activate the Virtual Environment:**
-   ```bash
-   source .venv/bin/activate
-   ```
+### 1. Environment Setup
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-2. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Install dependencies
+pip install -r requirements.txt
+```
 
-3. **Run Smoke Tests:**
-   ```bash
-   pytest tests/ -v
-   ```
+### 2. Run Smoke Tests
+Verify preprocessing, model building, and pipeline integration:
+```bash
+pytest tests/ -v
+```
 
----
-
-## 🚀 How to Run
-
-### Option 1: Standalone Script Pipeline
-To execute the complete data loading, model training, evaluation, experiment comparison, and artifact generation from scratch:
+### 3. Run the Standalone Pipeline
+To train both models, calculate metrics, run the controlled experiment, and save all artifacts:
 ```bash
 python main.py
 ```
-This generates:
-- Saved models in `outputs/models/` (`baseline_model.keras`, `experiment_model.keras`)
-- Evaluation metrics and experiment manifest in `outputs/results/` (`experiment_config.json`, `baseline_metrics.json`, `experiment_metrics.json`, `comparison_summary.json`)
-- High-resolution plots in `outputs/figures/`
 
-### Option 2: Jupyter Demonstration Notebook
-Open `notebooks/mnist_neural_network.ipynb` in VS Code or JupyterLab.
-The notebook includes a `RUN_TRAINING` flag:
-- `RUN_TRAINING = False`: Instantly loads previously generated models and metrics from `outputs/` for inspection and deep-dive analysis without retraining.
-- `RUN_TRAINING = True`: Retrains both baseline and experimental models from scratch within the notebook.
-
-To execute and verify the notebook headlessly from the CLI via Papermill:
-```bash
-papermill notebooks/mnist_neural_network.ipynb notebooks/mnist_neural_network_executed.ipynb
-```
+### 4. Inspect the Notebook
+Open `notebooks/mnist_neural_network.ipynb` in VS Code or Jupyter.
+- By default, `RUN_TRAINING = False` loads all precomputed models and metrics instantly with full visual analysis.
+- Set `RUN_TRAINING = True` to retrain the models directly inside the notebook.

@@ -19,13 +19,16 @@ def get_predictions_and_probabilities(model, x_test):
     predictions = np.argmax(probabilities, axis=1)
     return predictions, probabilities
 
-def compute_metrics(y_true, y_pred):
+def compute_metrics(y_true, y_pred, num_classes=10):
     """
     Computes full classification report and confusion matrix.
+    Explicitly uses labels=list(range(num_classes)) to ensure complete 10x10 matrix
+    and zero_division=0 to gracefully handle unpredicted classes.
     """
-    cm = confusion_matrix(y_true, y_pred)
-    report_dict = classification_report(y_true, y_pred, output_dict=True)
-    report_text = classification_report(y_true, y_pred, digits=4)
+    labels = list(range(num_classes))
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    report_dict = classification_report(y_true, y_pred, labels=labels, output_dict=True, zero_division=0)
+    report_text = classification_report(y_true, y_pred, labels=labels, digits=4, zero_division=0)
     return {
         "confusion_matrix": cm.tolist(),
         "classification_report": report_dict,

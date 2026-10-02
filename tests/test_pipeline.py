@@ -4,9 +4,9 @@ from src.train import train_model
 from src.evaluate import evaluate_model, get_predictions_and_probabilities, compute_metrics, find_top_confused_pairs
 
 def test_train_and_evaluate_smoke():
-    # Small synthetic dummy data: 50 samples
+    # Small synthetic dummy data: 50 samples (5 per class)
     x_dummy = np.random.rand(50, 28, 28).astype(np.float32)
-    y_dummy = np.random.randint(0, 10, size=(50,)).astype(np.int32)
+    y_dummy = np.tile(np.arange(10), 5).astype(np.int32)
     
     model = build_model(hidden_units=32)
     history, train_time = train_model(
