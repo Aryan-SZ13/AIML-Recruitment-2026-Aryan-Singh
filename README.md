@@ -11,11 +11,11 @@
 ## Candidate Details
 - **Candidate Name:** Aryan Singh
 - **Institution:** SRM Institute of Science and Technology
-- **Degree / Specialization:** B.Tech in Computer Science and Engineering (Artificial Intelligence and Machine Learning)
+- **Degree / Specialization:** B.Tech in Electronics and Computer Engineering (Artificial Intelligence and Machine Learning)
 
 ## Tasks Completed
 - **Task 2 — Neural Network:** COMPLETED
-  *(Note: Task 1 was not selected/assigned for this submission)*
+ 
 
 ## Problem Statement
 Build and analyze a simple neural network capable of classifying handwritten MNIST digits 0–9, while understanding the dataset, preprocessing, architecture, activations, training behavior, evaluation, and controlled model/training changes.
