@@ -15,7 +15,6 @@ def load_mnist(raw_dir="data/raw"):
     Load raw MNIST dataset from original IDX binary files.
     Ensures raw IDX files are downloaded from CVDFoundation mirror,
     and parses them using the custom project IDX parser.
-    Falls back to legacy local archive if available.
 
     Args:
         raw_dir (str): Path to raw IDX directory.
@@ -27,21 +26,17 @@ def load_mnist(raw_dir="data/raw"):
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     full_raw_dir = raw_dir if os.path.isabs(raw_dir) else os.path.join(project_root, raw_dir)
 
-    # 1. Primary path: Original IDX files via custom parser
+    # Ensure canonical IDX files exist; download from CVDFoundation mirror if missing
+    if not os.path.exists(os.path.join(full_raw_dir, "train-images-idx3-ubyte.gz")):
+        download_mnist_raw(target_dir=full_raw_dir)
+
+    # Parse directly from original IDX files via custom parser
     try:
-        if not os.path.exists(os.path.join(full_raw_dir, "train-images-idx3-ubyte.gz")):
-            download_mnist_raw(target_dir=full_raw_dir)
         return load_mnist_raw_from_idx(raw_dir=full_raw_dir)
     except Exception as e:
-        print(f"Notice: Loading from raw IDX encountered {e}; trying local cache fallback...")
-
-    # 2. Local npz cache fallback
-    npz_path = os.path.join(project_root, "data/mnist.npz")
-    if os.path.exists(npz_path):
-        with np.load(npz_path, allow_pickle=True) as data:
-            return (data["x_train"], data["y_train"]), (data["x_test"], data["y_test"])
-
-    raise FileNotFoundError("Could not locate or load raw MNIST IDX files.")
+        raise RuntimeError(
+            f"Failed to load canonical MNIST dataset from IDX files in '{full_raw_dir}': {e}"
+        ) from e
 
 
 def preprocess_images(images):
@@ -61,7 +56,7 @@ def preprocess_images(images):
 def load_and_preprocess_data(raw_dir="data/raw"):
     """
     Loads raw MNIST from original IDX files and normalizes images while preserving integer class labels (0-9).
-    No one-hot encoding is applied; compatible with sparse_categorical_crossentropy.
+    Labels remain integer class IDs 0–9 and are consumed by sparse_categorical_crossentropy.
 
     Args:
         raw_dir (str): Relative or absolute path to raw IDX directory.
