@@ -6,7 +6,7 @@ and exports all diagnostic charts and results JSONs.
 import os
 import json
 from src import config
-from src.experiment import run_controlled_experiment
+from src.experiment import run_controlled_experiment, run_all_experiments
 from src.visualize import (
     plot_sample_digits,
     plot_class_distributions,
@@ -14,7 +14,8 @@ from src.visualize import (
     plot_confusion_matrix_heatmap,
     plot_sample_predictions_with_probs,
     plot_comparison_curves,
-    plot_per_class_f1_comparison
+    plot_per_class_f1_comparison,
+    plot_all_experiments_summary
 )
 from src.evaluate import find_confident_errors, find_most_uncertain
 from src.data import load_and_preprocess_data
@@ -95,6 +96,37 @@ def main():
     plot_per_class_f1_comparison(results["baseline_eval"]["classification_report"], results["experiment_eval"]["classification_report"], save_path=os.path.join(config.FIGURES_DIR, "part_g_per_class_f1_comparison.png"))
     cm_exp = results["experiment_eval"]["confusion_matrix"]
     plot_confusion_matrix_heatmap(cm_exp, title="Experiment (256 units) Confusion Matrix", save_path=os.path.join(config.FIGURES_DIR, "part_g_experiment_confusion_matrix.png"))
+    
+    # 5. Run Comprehensive 6-Dimensional Ablation Suite
+    suite_data = run_all_experiments(verbose=1)
+    suite_res = suite_data["suite_results"]
+    suite_hist = suite_data["suite_histories"]
+    
+    # Print Multi-Experiment Comparison Table
+    print("\n" + "=" * 90)
+    print("        COMPREHENSIVE 6-DIMENSIONAL ABLATION EXPERIMENTAL SUITE RESULTS")
+    print("=" * 90)
+    suite_headers = ["Ablation Dimension / Variant", "Params", "Time (s)", "Test Acc", "Test Loss", "Macro F1", "Train-Val Gap"]
+    suite_fmt = "{:<40} | {:<8} | {:<8} | {:<9} | {:<9} | {:<8} | {:<12}"
+    print(suite_fmt.format(*suite_headers))
+    print("-" * 90)
+    for r in suite_res:
+        print(suite_fmt.format(
+            r["name"],
+            f"{r['total_params']:,}",
+            f"{r['training_time_sec']:.1f}s",
+            f"{r['test_accuracy']*100:.2f}%",
+            f"{r['test_loss']:.4f}",
+            f"{r['macro_f1']:.4f}",
+            f"{r['train_val_gap']*100:.2f}%"
+        ))
+    print("=" * 90)
+    
+    # Plot Multi-Experiment Visual Summary
+    plot_all_experiments_summary(
+        suite_res, suite_hist,
+        save_path=os.path.join(config.FIGURES_DIR, "experiment_suite_comparison.png")
+    )
     
     print("\n✓ Pipeline execution complete. All models, figures, and manifests saved successfully.")
 

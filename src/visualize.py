@@ -181,3 +181,86 @@ def plot_per_class_f1_comparison(report_base, report_exp, save_path=None):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=200)
     return fig
+
+def plot_all_experiments_summary(suite_results, suite_histories, save_path=None):
+    """
+    Renders a 4-panel multi-experiment comparative figure:
+      Panel 1: Test Accuracy across all 11 ablation variants (horizontal bar chart).
+      Panel 2: Activation Function convergence (ReLU vs Sigmoid vs Tanh validation loss).
+      Panel 3: Learning Rate optimization dynamics (lr=0.01 vs 0.001 vs 0.0001).
+      Panel 4: Training Time vs Test Accuracy trade-off scatter plot.
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    
+    # ------------------ Panel 1: Test Accuracy Bar Chart ------------------
+    ax1 = axes[0, 0]
+    names = [r["name"] for r in suite_results]
+    accs = [r["test_accuracy"] * 100 for r in suite_results]
+    y_pos = np.arange(len(names))
+    
+    # Highlight baseline in blue, variants in green/coral
+    colors = ["#1f77b4" if r["id"] == "baseline" else "#2ca02c" if r["test_accuracy"] >= suite_results[0]["test_accuracy"] else "#e377c2" for r in suite_results]
+    bars = ax1.barh(y_pos, accs, color=colors, edgecolor="black", alpha=0.85)
+    ax1.set_yticks(y_pos)
+    ax1.set_yticklabels(names, fontsize=9)
+    ax1.invert_yaxis()
+    ax1.set_xlim(min(accs) - 2.0, 100.0)
+    ax1.set_xlabel("Test Accuracy (%)", fontsize=10)
+    ax1.set_title("1. Test Accuracy Across All 11 Ablation Variants", fontsize=11, fontweight="bold")
+    ax1.axvline(accs[0], color="#d62728", linestyle="--", linewidth=1.5, label=f"Baseline Reference ({accs[0]:.2f}%)")
+    ax1.legend(loc="lower left", fontsize=9)
+    ax1.grid(axis="x", linestyle="--", alpha=0.6)
+    
+    for bar in bars:
+        w = bar.get_width()
+        ax1.text(w + 0.1, bar.get_y() + bar.get_height()/2, f"{w:.2f}%", va="center", fontsize=8)
+        
+    # ------------------ Panel 2: Activation Functions (ReLU vs Sigmoid vs Tanh) ------------------
+    ax2 = axes[0, 1]
+    act_keys = [("baseline", "ReLU (Baseline)", "#1f77b4"),
+                ("exp6_act_sigmoid", "Sigmoid (Saturating)", "#d62728"),
+                ("exp6_act_tanh", "Tanh (Zero-Centered)", "#2ca02c")]
+    for key, label, col in act_keys:
+        if key in suite_histories:
+            ep = range(1, len(suite_histories[key]["val_loss"]) + 1)
+            ax2.plot(ep, suite_histories[key]["val_loss"], "o-", label=label, color=col, alpha=0.9)
+    ax2.set_title("2. Activation Function Convergence (Validation Loss)", fontsize=11, fontweight="bold")
+    ax2.set_xlabel("Epoch", fontsize=10)
+    ax2.set_ylabel("Validation Loss", fontsize=10)
+    ax2.grid(True, linestyle="--", alpha=0.6)
+    ax2.legend(fontsize=9)
+    
+    # ------------------ Panel 3: Learning Rate Dynamics ------------------
+    ax3 = axes[1, 0]
+    lr_keys = [("baseline", "lr = 0.001 (Baseline)", "#1f77b4"),
+               ("exp3_lr_high", "lr = 0.01 (High / Aggressive)", "#d62728"),
+               ("exp3_lr_low", "lr = 0.0001 (Low / Conservative)", "#ff7f0e")]
+    for key, label, col in lr_keys:
+        if key in suite_histories:
+            ep = range(1, len(suite_histories[key]["val_loss"]) + 1)
+            ax3.plot(ep, suite_histories[key]["val_loss"], "s--", label=label, color=col, alpha=0.9)
+    ax3.set_title("3. Learning Rate Optimization Stability (Validation Loss)", fontsize=11, fontweight="bold")
+    ax3.set_xlabel("Epoch", fontsize=10)
+    ax3.set_ylabel("Validation Loss", fontsize=10)
+    ax3.grid(True, linestyle="--", alpha=0.6)
+    ax3.legend(fontsize=9)
+    
+    # ------------------ Panel 4: Accuracy vs Computational Time ------------------
+    ax4 = axes[1, 1]
+    times = [r["training_time_sec"] for r in suite_results]
+    for r in suite_results:
+        c = "#1f77b4" if r["id"] == "baseline" else "#2ca02c" if r["test_accuracy"] >= suite_results[0]["test_accuracy"] else "#e377c2"
+        ax4.scatter(r["training_time_sec"], r["test_accuracy"] * 100, s=r["total_params"] / 1500, color=c, edgecolors="black", alpha=0.8)
+        ax4.annotate(r["id"].replace("exp", "E").replace("_", " "), (r["training_time_sec"] + 0.3, r["test_accuracy"] * 100), fontsize=7)
+        
+    ax4.set_title("4. Pareto Frontier: Training Time vs. Accuracy (Bubble Size = Params)", fontsize=11, fontweight="bold")
+    ax4.set_xlabel("Wall-Clock Training Time (seconds)", fontsize=10)
+    ax4.set_ylabel("Test Accuracy (%)", fontsize=10)
+    ax4.grid(True, linestyle="--", alpha=0.6)
+    
+    plt.tight_layout()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, dpi=200)
+    return fig
+

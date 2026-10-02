@@ -30,3 +30,23 @@ def test_parameter_counts():
     model_256 = build_model(hidden_units=256)
     params_256 = count_model_parameters(model_256)
     assert params_256["total_params"] == 203530
+
+def test_multi_layer_architecture_and_parameters():
+    # 2 hidden layers: [128, 64]
+    # 784 * 128 + 128 = 100,480 (layer 1)
+    # 128 * 64 + 64   =   8,256 (layer 2)
+    # 64 * 10 + 10    =     650 (output)
+    # Total           = 109,386
+    model = build_model(hidden_units=[128, 64])
+    assert len(model.layers) == 4  # Flatten, Dense, Dense, Dense
+    params = count_model_parameters(model)
+    assert params["total_params"] == 109386
+
+def test_different_activations_and_learning_rate():
+    model_sig = build_model(hidden_units=128, activation="sigmoid", learning_rate=0.01)
+    assert model_sig.layers[1].activation.__name__ == "sigmoid"
+    assert np.isclose(float(model_sig.optimizer.learning_rate.numpy()), 0.01)
+    
+    model_tanh = build_model(hidden_units=128, activation="tanh")
+    assert model_tanh.layers[1].activation.__name__ == "tanh"
+
