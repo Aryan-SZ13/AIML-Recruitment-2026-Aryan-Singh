@@ -92,7 +92,7 @@ Build and analyze a simple neural network capable of classifying handwritten MNI
 ## Approach
 The end-to-end engineering pipeline is structured as follows:
 1. **MNIST IDX Download:** Automated retrieval of canonical binary IDX archives from the CVDFoundation mirror.
-2. **Custom Binary Parsing:** First-principles parsing of IDX headers and buffers via Python's `struct.unpack` into NumPy arrays.
+2. **Custom Binary Parsing:** Custom parsing of binary IDX headers and byte arrays using Python's `struct.unpack` into NumPy arrays.
 3. **Preprocessing & Normalization:** Scaling raw byte values $[0, 255] \to [0.0, 1.0]$ in `float32`, preserving integer scalar labels for memory-efficient training.
 4. **Neural Network Construction:** Building a clean, modular Multi-Layer Perceptron (MLP) with explicit `Flatten()`, hidden `Dense(128, ReLU)`, and output `Dense(10, Softmax)`.
 5. **Training:** Supervised optimization under Adam ($\eta=0.001$) with `sparse_categorical_crossentropy` and a deterministic $10\%$ validation split ($54{,}000$ train, $6{,}000$ val).
@@ -159,7 +159,7 @@ There are 10 classes, corresponding to the decimal digits 0, 1, 2, 3, 4, 5, 6, 7
 **Answer:**
 Each label is an integer class ID from 0 to 9 identifying the ground-truth digit depicted in the corresponding image. The implementation keeps labels as integer class IDs and uses `sparse_categorical_crossentropy`.
 
-### Dataset Provenance & First-Principles Parsing
+### Dataset Provenance & Custom Parsing
 - **Attribution:** Yann LeCun, Corinna Cortes, and Christopher J.C. Burges ([https://yann.lecun.org/exdb/mnist/](https://yann.lecun.org/exdb/mnist/)).
 - **Canonical Download Source:** The official mirror provided by CVDFoundation ([https://raw.githubusercontent.com/cvdfoundation/mnist/master/](https://raw.githubusercontent.com/cvdfoundation/mnist/master/)), automated via [`src/mnist_download.py`](src/mnist_download.py).
 - **Custom Binary Parser:** Implemented in [`src/mnist_parser.py`](src/mnist_parser.py) using `struct.unpack`:
@@ -183,12 +183,12 @@ Each label is an integer class ID from 0 to 9 identifying the ground-truth digit
 
 ### Mathematical Scaling & Rationale
 $$\text{pixel\_normalized} = \frac{\text{pixel}}{255.0} \in [0.0, 1.0]$$
-- **Optimization Stability:** Division by $255.0$ scales input feature magnitudes into a compact range centered near zero, preventing saturated activations during early training and stabilizing gradient magnitudes across Adam updates.
+- **Optimization Stability:** Division by $255.0$ scales raw pixel values from $[0, 255]$ into a normalized $[0.0, 1.0]$ range, preventing large activations during early training and keeping gradient updates stable in Adam.
 - **Architectural Preservation:** Images remain $28 \times 28$ during preprocessing; spatial dimensionality flattening ($28 \times 28 \to 784$) is cleanly encapsulated within the neural network model via Keras's `Flatten()` layer.
 - **Target Label Representation:** Labels remain integer class IDs 0–9 and are consumed by `sparse_categorical_crossentropy`. Storing labels as integer scalar class identifiers ($y \in \{0, 1, \dots, 9\}$, `int32`) eliminates memory expansion and leverages TensorFlow's direct index lookup.
 - **Deterministic Data Partition:**
   - Original dataset: $60{,}000$ training images, $10{,}000$ test images.
-  - Training-time split (`validation_split=0.1`): $54{,}000$ training samples ($90\%$) for gradient optimization, $6{,}000$ validation samples ($10\%$) held out for out-of-fold generalization tracking.
+  - Training-time split (`validation_split=0.1`): $54{,}000$ training samples ($90\%$) for gradient optimization, $6{,}000$ validation samples ($10\%$) held out for validation monitoring during training.
   - Held-out test set: $10{,}000$ samples evaluated exclusively post-training.
   - Random seed: locked at `42` across Python, NumPy, and TensorFlow.
 
@@ -196,7 +196,7 @@ $$\text{pixel\_normalized} = \frac{\text{pixel}}{255.0} \in [0.0, 1.0]$$
 
 ## Part C — Build the Neural Network
 
-To analyze dense neural mechanics from first principles, this implementation intentionally uses a **fully connected feedforward Multi-Layer Perceptron (MLP)** without convolutional shortcuts:
+This implementation uses a **fully connected feedforward Multi-Layer Perceptron (MLP)** without convolutional shortcuts to clearly demonstrate dense layer mechanics:
 
 ```
 Input Image (28, 28)
@@ -205,7 +205,7 @@ Input Image (28, 28)
 Flatten() Layer                                  ──► Vector of size 784
        │
        ▼
-Dense(128, activation="relu")                    ──► Affine transform + ReLU (100,480 parameters)
+Dense(128, activation="relu")                    ──► Linear layer (Wx + b) + ReLU (100,480 parameters)
        │
        ▼
 Dense(10, activation="softmax")                  ──► 10 Class Probabilities (1,290 parameters)
@@ -224,16 +224,16 @@ Dense(10, activation="softmax")                  ──► 10 Class Probabilitie
 ## Part D — Activation Functions
 
 ### 1. Why are Activation Functions Required?
-If a neural network consisted solely of affine transformations (linear layers: $z = Wx + b$), stacking multiple layers would collapse into a single equivalent linear mapping:
+If a neural network consisted solely of linear layers ($z = Wx + b$), stacking multiple layers would collapse into a single equivalent linear mapping:
 $$f(x) = W_2(W_1 x + b_1) + b_2 = (W_2 W_1) x + (W_2 b_1 + b_2) = W' x + b'$$
-Without non-linear activation functions, a network with 100 hidden layers can express no more functional complexity than a standard linear perceptron. Activation functions introduce non-linearities that allow the network to approximate complex non-linear decision boundaries (Universal Approximation Theorem).
+Without non-linear activation functions, a network with 100 hidden layers collapses into a single linear model that cannot learn non-linear patterns. Non-linear activation functions allow the network to learn curved and complex decision boundaries necessary to separate handwritten digit strokes.
 
 ### 2. Why is ReLU Used in the Hidden Layer?
 $$f(x) = \max(0, x)$$
 - **Mitigation of the Vanishing Gradient Problem:** For any positive input ($x > 0$), the derivative is constant:
   $$\frac{df}{dx} = 1.0$$
   Unlike saturating activations (such as Sigmoid or Tanh, whose derivatives decay toward 0 for large inputs), ReLU maintains strong gradient flow across backpropagation updates.
-- **Computational Efficiency:** Evaluating $\max(0, x)$ requires a simple hardware threshold comparison at zero, avoiding expensive transcendental exponential operations ($e^x$).
+- **Computational Efficiency:** Evaluating $\max(0, x)$ requires a simple hardware threshold comparison at zero, avoiding expensive exponential operations ($e^x$).
 - **Representation Sparsity:** For $x \le 0$, the neuron outputs strictly $0$. This induces sparse representations where only a relevant subset of features activate for any given digit stroke.
 
 ### 3. Why is Softmax at the Output for 10 Mutually Exclusive Digit Classes?
@@ -276,7 +276,7 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 
 *Curve Analysis:*
 - **Loss Convergence:** Both training and validation loss decline steeply during epochs 1–5, then converge smoothly. Training loss reaches $0.0125$ while validation loss stabilizes around $0.0834$.
-- **Generalization Tracking:** Training accuracy progresses from $92.61\%$ to $99.84\%$, while validation accuracy reaches $97.95\%$. The modest $1.89\text{ pp}$ gap between train and validation accuracy confirms that the baseline model learns robust representations without pathological overfitting.
+- **Generalization Tracking:** Training accuracy progresses from $92.61\%$ to $99.84\%$, while validation accuracy reaches $97.95\%$. The modest $1.89\text{ pp}$ gap between train and validation accuracy confirms that the baseline model learns robust representations without severe overfitting.
 
 ---
 
@@ -322,7 +322,7 @@ $$\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_{j=0}^{9} \exp(z_j)} \quad \text{f
 
 ## Part G — Experimentation (6-Dimensional Controlled Ablation Suite)
 
-To satisfy the assignment's mandate to explore model and optimization modifications, we executed a **6-dimensional controlled ablation suite** consisting of **11 total configurations** (1 baseline control + 10 single-variable variants).
+We ran a **6-dimensional controlled ablation suite** consisting of **11 total configurations** (1 baseline control + 10 single-variable variants) to systematically evaluate architecture and optimization choices.
 
 **Authoritative Results Source:** All values derive directly from [`outputs/results/experiment_suite_manifest.json`](outputs/results/experiment_suite_manifest.json) recorded from a single deterministic run with master seed `42`:
 
@@ -358,8 +358,8 @@ Added a second hidden dense layer with 64 units ($784 \to 128 \to 64 \to 10$), i
 - **Performance Evaluation:** Did the change improve performance? No, test accuracy decreased by $0.58\text{ pp}$ and test loss increased.
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, adding a second dense layer without spatial pooling or convolutional inductive biases did not improve generalization. A plausible explanation is that on flattened MNIST pixels, a single hidden layer with 128 units already provides sufficient non-linear separation capacity, whereas introducing an additional dense layer increases parameter interactions and optimization complexity without adding translation invariance.
-- **What does this suggest?** For simple 28x28 digit classification, increasing MLP depth beyond one hidden layer without regularization can introduce optimization overhead without improving feature representation.
+- **Why or why not?** In this run, adding a second dense layer did not improve test accuracy on flattened MNIST pixels. A single hidden layer of 128 units already has enough capacity to separate digit shapes, while adding a second layer adds parameters and training overhead without providing convolutional feature extraction.
+- **What does this suggest?** For simple 28x28 digit classification, increasing dense layer depth without regularization adds model complexity without improving test accuracy.
 
 ---
 
@@ -373,7 +373,7 @@ Doubled the width of the single hidden dense layer from 128 to 256 units ($784 \
 - **Performance Evaluation:** Did the change improve performance? No, doubling the width did not yield higher test accuracy.
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, doubling the width to 256 units resulted in a slight drop of $0.16\text{ pp}$ ($97.69\% \to 97.53\%$). The result is consistent with capacity saturation: 128 units already capture the salient stroke combinations for MNIST digits, and increasing width without explicit regularization (e.g., dropout) slightly expanded the train-validation gap ($2.29\text{ pp}$ vs $1.89\text{ pp}$) without conferring out-of-fold generalization benefits.
+- **Why or why not?** In this run, doubling the width to 256 units resulted in a slight drop of $0.16\text{ pp}$ ($97.69\% \to 97.53\%$). 128 units already provide enough capacity to capture the main handwritten digit patterns. Widening to 256 units without regularization slightly widened the train-validation gap ($2.29\text{ pp}$ vs $1.89\text{ pp}$) without improving test accuracy.
 - **What does this suggest?** Model capacity must be matched to task complexity; excessive width without regularizers yields diminishing returns on compact image datasets.
 
 ---
@@ -390,8 +390,8 @@ Evaluated an aggressive rate ($\eta = 0.01$, $10\times$ baseline) and a conserva
 - **Performance Evaluation:** Did the change improve performance? No, both higher ($0.01$) and lower ($0.0001$) learning rates degraded test accuracy relative to the $\eta = 0.001$ baseline.
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, $\eta = 0.01$ led to elevated test loss ($0.2759$), consistent with optimizer updates overshooting sharper regions of the loss surface. Conversely, $\eta = 0.0001$ resulted in underfitting within 15 epochs ($95.77\%$), indicating that progress was too slow along flatter gradients.
-- **What does this suggest?** Learning rate is the primary governing factor for gradient descent dynamics. The default Adam learning rate of $\eta = 0.001$ represents a well-tuned equilibrium between optimization stability and convergence velocity.
+- **Why or why not?** In this run, learning rate 0.01 was too high, causing unstable updates that overshot optimal weights and led to high test loss ($0.2759$). Conversely, 0.0001 was too small, leaving the model underfitted after 15 epochs ($95.77\%$).
+- **What does this suggest?** Learning rate is the primary governing factor for gradient descent dynamics. The default Adam learning rate of $\eta = 0.001$ provides the best balance between optimization stability and convergence speed.
 
 ---
 
@@ -407,7 +407,7 @@ Evaluated a small batch size ($B = 32$, $4\times$ smaller) and a large batch siz
 - **Performance Evaluation:** Did the change improve performance? Small batch ($B = 32$) improved accuracy slightly ($+0.18\text{ pp}$), while large batch ($B = 512$) prioritized execution speed over peak accuracy.
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, $B=32$ reached $97.87\%$ ($+0.18\text{ pp}$), whereas $B=512$ reached $97.51\%$ ($-0.18\text{ pp}$). A plausible explanation widely supported in optimization literature is that mini-batch stochastic gradient noise in smaller batches can act as an implicit regularizer helping escape sharper local minima, while larger batches yield smoother gradient estimates and superior hardware vectorization throughput ($6.10\text{s}$ vs $31.00\text{s}$).
+- **Why or why not?** In this run, smaller batches ($B=32$) provide noisier gradient estimates per step that act as a regularizer, helping the model avoid poor local minima and reach $97.87\%$ ($+0.18\text{ pp}$). Larger batches ($B=512$) produce smoother gradients and train faster ($6.10\text{s}$ vs $31.00\text{s}$), but achieve slightly lower accuracy ($97.51\%$).
 - **What does this suggest?** Batch size presents an explicit operational trade-off between statistical regularization (small batch) and hardware vectorization efficiency (large batch).
 
 ---
@@ -424,7 +424,7 @@ Tested an abbreviated budget ($5$ epochs) and an extended budget ($30$ epochs) a
 - **Performance Evaluation:** Did the change improve performance? Extended training ($30$ epochs) marginally improved test accuracy ($+0.16\text{ pp}$), while $5$ epochs was insufficient for complete convergence ($-0.68\text{ pp}$).
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, 5 epochs halted optimization before the model completed traversing the asymptotic loss curvature ($97.01\%$). While 30 epochs improved test accuracy by $0.16\text{ pp}$ over baseline ($97.85\%$), the validation loss plateau suggests diminishing returns beyond epoch 15 on this architecture.
+- **Why or why not?** In this run, 5 epochs was not enough training time for complete convergence ($97.01\%$). Training for 30 epochs gave a small accuracy boost ($97.85\%$, $+0.16\text{ pp}$), but validation loss leveled off, showing diminishing returns after 15 epochs.
 - **What does this suggest?** 15 epochs is an optimal early-stopping point for this baseline architecture, capturing nearly all generalization capacity before overfitting begins to widen the train-validation gap.
 
 ---
@@ -441,7 +441,7 @@ Replaced the hidden layer's `relu` activation with `sigmoid` and `tanh`, holding
 - **Performance Evaluation:** Did the change improve performance? Tanh slightly improved test accuracy ($+0.06\text{ pp}$) and achieved the lowest loss ($0.0728$), whereas Sigmoid underperformed ($97.40\%$).
 
 ##### Why do you think the change affected the model's performance?
-- **Why or why not?** In this run, Sigmoid achieved lower test accuracy ($97.40\%$) and higher loss ($0.0868$). A plausible explanation consistent with deep learning theory is that the derivative of the standard logistic function is bounded by $\sigma'(z) \le 0.25$, which can attenuate backpropagating gradient signals across layers (the vanishing gradient effect). Meanwhile, Tanh is zero-centered with outputs in $[-1, 1]$, which helps alleviate the all-positive activation bias common to unnormalized Sigmoids, consistent with its lower observed test loss ($0.0728$). However, these single-seed runs indicate empirical trends rather than establishing universal causal certainty.
+- **Why or why not?** In this run, Sigmoid achieved lower test accuracy ($97.40\%$) and higher loss ($0.0868$). Sigmoid has a maximum derivative of $0.25$, which shrinks gradients during backpropagation and slows training. In contrast, Tanh outputs range from $-1$ to $1$ (centered around zero), which avoids all-positive activation bias and achieved the lowest test loss ($0.0728$) among tested activations.
 - **What does this suggest?** Zero-centered activations like Tanh and non-saturating activations like ReLU provide substantially superior gradient backpropagation pathways compared to standard Sigmoid for feedforward networks.
 
 ---
@@ -451,7 +451,7 @@ Replaced the hidden layer's `relu` activation with `sigmoid` and `tanh`, holding
 | Criterion | Best Performing Variant | Trade-off Observed |
 | :--- | :--- | :--- |
 | **Highest Generalization (Accuracy)** | **Small Batch ($B = 32$)**: $97.87\%$ | Highest training time ($31.00\text{s}$) due to frequent gradient updates. |
-| **Lowest Test Loss (Calibrated Confidence)** | **Tanh Activation**: $0.0728$ | Zero-centered representations yielded lower entropy in final logit predictions. |
+| **Lowest Test Loss** | **Tanh Activation**: $0.0728$ | Zero-centered outputs produced lower prediction loss across test samples. |
 | **Maximum Compute Throughput** | **Large Batch ($B = 512$)**: $6.10\text{s}$ | $1.95\times$ faster wall-clock execution with only $0.18\text{ pp}$ drop in accuracy. |
 | **Parameter Efficiency** | **Baseline (128 units)**: $101{,}770$ params | Matched or exceeded the 256-unit model with $50\%$ fewer parameters. |
 
@@ -460,15 +460,15 @@ Replaced the hidden layer's `relu` activation with `sigmoid` and `tanh`, holding
 ## Key Learnings
 
 1. **Why Normalization Improves Neural Network Optimization:**
-   Raw pixel intensities $[0, 255]$ scale weight gradients unevenly during initial matrix multiplications ($z = Wx + b$), causing ill-conditioned loss surfaces and erratic oscillations. Normalizing to $[0.0, 1.0]$ centers feature variances, ensuring balanced gradient magnitudes across Adam updates and smooth early convergence.
+   Raw pixel intensities $[0, 255]$ scale weight gradients unevenly during initial matrix multiplications ($z = Wx + b$), causing unstable training. Normalizing to $[0.0, 1.0]$ keeps activations well-scaled, preventing large gradient swings and helping Adam converge smoothly.
 2. **Why Non-linear Activation Functions are Mathematically Essential:**
-   Stacking purely affine layers collapses into a single linear mapping ($W_2(W_1 x + b_1) + b_2 = W' x + b'$), restricting expressive capacity to a simple linear classifier. Non-linear activations introduce the curvature necessary to construct multi-dimensional decision boundaries for separating digit strokes.
+   Stacking linear layers without activations simply collapses into a single linear model ($W_2(W_1 x + b_1) + b_2 = W' x + b'$). Non-linear activations allow the network to learn curved boundaries needed to classify handwritten digits.
 3. **Why Softmax is Suited for Mutually Exclusive Digit Classes:**
-   Because each MNIST image depicts exactly one digit class ($0$–$9$), the shared denominator in Softmax ($\sum_{j=0}^9 \exp(z_j)$) couples the probabilities so that a higher likelihood for one digit directly suppresses competing classes, producing well-calibrated posterior probabilities.
+   Because each MNIST image depicts exactly one digit class ($0$–$9$), the shared denominator in Softmax ($\sum_{j=0}^9 \exp(z_j)$) couples the probabilities so that a higher likelihood for one digit directly suppresses competing classes, producing normalized probabilities that sum to 1.0.
 4. **Capacity Saturation vs Overfitting:**
    Doubling width to 256 units doubled parameters ($101\text{k} \to 203\text{k}$) without boosting test accuracy ($-0.16\text{ pp}$), demonstrating that simple flat MNIST pixels reach representational capacity limits quickly with dense layers.
 5. **Regularization through Stochastic Gradient Noise:**
-   Smaller batch sizes ($B=32$) introduced mini-batch stochasticity that empirically improved test accuracy ($97.87\%$, $+0.18\text{ pp}$) over larger batch sizes ($B=512$, $97.51\%$), illustrating the implicit regularization of stochastic gradient descent.
+   Smaller batches ($B=32$) add useful gradient noise that helps prevent the network from settling into poor local minima, reaching $97.87\%$ accuracy, while larger batches ($B=512$) train faster ($6.10\text{s}$) with slightly lower accuracy ($97.51\%$).
 
 ---
 
@@ -477,7 +477,7 @@ Replaced the hidden layer's `relu` activation with `sigmoid` and `tanh`, holding
 | Challenge Encountered | Root Cause | Engineering Solution |
 | :--- | :--- | :--- |
 | **Unreliable Original Dataset Endpoint** | The original LeCun server (`/exdb/mnist/`) is frequently offline or blocked in automated CI/CD environments. | Created [`src/mnist_download.py`](src/mnist_download.py) to automatically download canonical raw IDX files from the official CVDFoundation GitHub mirror, validating file fingerprints. |
-| **Custom Binary IDX File Parsing** | Raw MNIST data is stored in custom big-endian binary IDX format rather than flat CSVs or images. | Developed [`src/mnist_parser.py`](src/mnist_parser.py) using Python's native `struct.unpack` to parse 32-bit big-endian headers, magic numbers (`2051`, `2049`), and unpack raw byte buffers directly into NumPy arrays from first principles. |
+| **Custom Binary IDX File Parsing** | Raw MNIST data is stored in custom big-endian binary IDX format rather than flat CSVs or images. | Developed [`src/mnist_parser.py`](src/mnist_parser.py) using Python's native `struct.unpack` to parse 32-bit big-endian headers, magic numbers (`2051`, `2049`), and unpack raw byte buffers directly into NumPy arrays without high-level library dependencies. |
 | **Keras 3 / Matplotlib Sandbox Permission Denials** | Under restricted or sandboxed environments, default home directories (`~/.keras`, `~/.matplotlib`) trigger write permission errors. | Redirected `KERAS_HOME` and `MPLCONFIGDIR` to local workspace directories (`.keras_cache`, `.mpl_cache`) in [`src/config.py`](src/config.py) and [`tests/conftest.py`](tests/conftest.py) prior to library imports. |
 | **Headless Notebook Execution** | Standard Jupyter kernel discovery was blocked in CLI environments. | Built a custom headless executor ([`execute_notebook.py`](execute_notebook.py)) using Python standard libraries to execute cells sequentially and embed base64 image outputs directly into the `.ipynb` file. |
 
