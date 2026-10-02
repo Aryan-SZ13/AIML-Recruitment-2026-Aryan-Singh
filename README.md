@@ -227,28 +227,55 @@ The dataset is structured deterministically as follows:
 
 ## Part C — Build the Neural Network
 
-This implementation uses a **fully connected feedforward Multi-Layer Perceptron (MLP)** without convolutional shortcuts to clearly demonstrate dense layer mechanics:
+### Requirement
+
+Build a simple neural network containing:
+- Input layer
+- At least one hidden layer
+- Output layer
+
+You may use:
+- TensorFlow/Keras
+- PyTorch
+
+The architecture should be simple enough to explain the purpose of each major component.
+
+### Our Implementation
+
+We used TensorFlow/Keras with the following architecture:
 
 ```
 Input Image (28, 28)
-       │
-       ▼
-Flatten() Layer                                  ──► Vector of size 784
-       │
-       ▼
-Dense(128, activation="relu")                    ──► Linear layer (Wx + b) + ReLU (100,480 parameters)
-       │
-       ▼
-Dense(10, activation="softmax")                  ──► 10 Class Probabilities (1,290 parameters)
+↓
+Flatten()
+↓
+Dense(128, activation="relu")
+↓
+Dense(10, activation="softmax")
 ```
 
-### Parameter Derivation
-- **Input Transformation:** $\text{Flatten}: (28, 28) \to 784$.
-- **Hidden Dense Layer ($784 \to 128$):**
+### Purpose of Each Component
+
+**Input layer**
+Receives the $28 \times 28$ MNIST image.
+
+**Flatten**
+Converts $28 \times 28$ into a $784$-element vector so it can be passed to a Dense layer.
+
+**Hidden layer**
+128 neurons learn combinations of pixel-level patterns. ReLU adds non-linearity.
+
+**Output layer**
+10 neurons correspond to digits 0–9. Softmax converts the outputs into class probabilities.
+
+### Parameter Count
+
+- **Flatten layer:** $0$ parameters (performs spatial dimension reshape: $28 \times 28 \to 784$).
+- **Hidden Dense layer ($784 \to 128$):**
   $$\text{Weights} = 784 \times 128 = 100{,}352, \quad \text{Biases} = 128, \quad \text{Total} = 100{,}480$$
-- **Output Dense Layer ($128 \to 10$):**
+- **Output Dense layer ($128 \to 10$):**
   $$\text{Weights} = 128 \times 10 = 1{,}280, \quad \text{Biases} = 10, \quad \text{Total} = 1{,}290$$
-- **Total Trainable Parameters:** $100{,}480 + 1{,}290 = \mathbf{101{,}770}$ (0 non-trainable parameters).
+- **Total Trainable Parameters:** $100{,}480 + 1{,}290 = \mathbf{101{,}770}$ ($0$ non-trainable parameters).
 
 ---
 
