@@ -18,7 +18,7 @@
 ## Candidate Details
 - **Candidate Name:** Aryan Singh
 - **Institution:** SRM Institute of Science and Technology
-- **Degree / Specialization:** B.Tech in Electronics and Computer Engineering (Artificial Intelligence and Machine Learning)
+- **Degree / Specialization:** B.Tech in Electronics and Computer Engineering
 
 ## Tasks Completed
 - **Task 2 — Neural Network:** COMPLETED
