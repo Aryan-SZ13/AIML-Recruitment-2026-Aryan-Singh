@@ -5,15 +5,53 @@
 [![TensorFlow 2.x](https://img.shields.io/badge/TensorFlow-2.x-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?logo=kaggle&logoColor=white)][kaggle-notebook]
 
+<p align="center">
+  <a href="https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh">
+    <img
+      src="docs/images/gitdiagram_architecture.png"
+      alt="GitDiagram architecture of the MNIST neural network project"
+      width="850"
+    />
+  </a>
+</p>
+
+## Candidate Details
+- **Candidate Name:** Aryan Singh
+- **Institution:** SRM Institute of Science and Technology
+- **Degree / Specialization:** B.Tech in Electronics and Computer Engineering (Artificial Intelligence and Machine Learning)
+
+## Tasks Completed
+- **Task 2 — Neural Network:** COMPLETED
+
+## Kaggle
+
+[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)][kaggle-notebook]
+
+**Kaggle Notebook:** [MNIST Neural Network — From Raw IDX Files to Controlled Experiments][kaggle-notebook]
+
+The Kaggle notebook provides an interactive showcase of the model training pipeline, confusion matrix diagnostics, and 6-dimensional ablation suite in a cloud environment. This GitHub repository remains the primary engineering project containing all modular source code, unit tests, and reproducibility pipelines.
+
+[kaggle-notebook]: https://www.kaggle.com/code/aryansz13/kagglenotebook1331
+
+## Problem Statement
+Build and analyze a simple neural network capable of classifying handwritten MNIST digits 0–9, while understanding the dataset, preprocessing, architecture, activations, training behavior, evaluation, and controlled model/training changes.
+
+## Approach
+The end-to-end engineering pipeline is structured as follows:
+1. **MNIST IDX Download:** Automated retrieval of canonical binary IDX archives from the CVDFoundation mirror.
+2. **Custom Binary Parsing:** Custom parsing of binary IDX headers and byte arrays using Python's `struct.unpack` into NumPy arrays.
+3. **Preprocessing & Normalization:** Scaling raw byte values $[0, 255] \to [0.0, 1.0]$ in `float32`, preserving integer scalar labels for memory-efficient training.
+4. **Neural Network Construction:** Building a clean, modular Multi-Layer Perceptron (MLP) with explicit `Flatten()`, hidden `Dense(128, ReLU)`, and output `Dense(10, Softmax)`.
+5. **Training:** Supervised optimization under Adam ($\eta=0.001$) with `sparse_categorical_crossentropy` and a deterministic $10\%$ validation split ($54{,}000$ train, $6{,}000$ val).
+6. **Evaluation:** Multi-metric diagnosis on $10{,}000$ unseen test digits including confusion matrix heatmap, per-class Precision/Recall/F1, and error analysis.
+7. **Controlled Experiments:** Systematic 6-dimensional controlled ablation suite across 11 configurations evaluating depth, width, learning rate, batch size, epoch budget, and activations.
 
 ## Architecture
 
-![Project architecture](docs/images/architecture_flowchart.png)
-
-The diagram above is the canonical architecture for the V1 codebase. The Mermaid version below mirrors the same flow and links each component to its source file.
+The project is organized into data ingestion, modeling/training, evaluation/analysis, and orchestration.
 
 <details>
-<summary><b>Interactive Architecture Flowchart (Mermaid)</b></summary>
+<summary><b>Mermaid architecture source</b></summary>
 
 ```mermaid
 flowchart TD
@@ -74,39 +112,6 @@ flowchart TD
 ```
 
 </details>
-
-</details>
-
-## Candidate Details
-- **Candidate Name:** Aryan Singh
-- **Institution:** SRM Institute of Science and Technology
-- **Degree / Specialization:** B.Tech in Electronics and Computer Engineering (Artificial Intelligence and Machine Learning)
-
-## Tasks Completed
-- **Task 2 — Neural Network:** COMPLETED
-
-## Kaggle
-
-[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)][kaggle-notebook]
-
-**Kaggle Notebook:** [MNIST Neural Network — From Raw IDX Files to Controlled Experiments][kaggle-notebook]
-
-The Kaggle notebook provides an interactive showcase of the model training pipeline, confusion matrix diagnostics, and 6-dimensional ablation suite in a cloud environment. This GitHub repository remains the primary engineering project containing all modular source code, unit tests, and reproducibility pipelines.
-
-[kaggle-notebook]: https://www.kaggle.com/code/aryansz13/kagglenotebook1331
-
-## Problem Statement
-Build and analyze a simple neural network capable of classifying handwritten MNIST digits 0–9, while understanding the dataset, preprocessing, architecture, activations, training behavior, evaluation, and controlled model/training changes.
-
-## Approach
-The end-to-end engineering pipeline is structured as follows:
-1. **MNIST IDX Download:** Automated retrieval of canonical binary IDX archives from the CVDFoundation mirror.
-2. **Custom Binary Parsing:** Custom parsing of binary IDX headers and byte arrays using Python's `struct.unpack` into NumPy arrays.
-3. **Preprocessing & Normalization:** Scaling raw byte values $[0, 255] \to [0.0, 1.0]$ in `float32`, preserving integer scalar labels for memory-efficient training.
-4. **Neural Network Construction:** Building a clean, modular Multi-Layer Perceptron (MLP) with explicit `Flatten()`, hidden `Dense(128, ReLU)`, and output `Dense(10, Softmax)`.
-5. **Training:** Supervised optimization under Adam ($\eta=0.001$) with `sparse_categorical_crossentropy` and a deterministic $10\%$ validation split ($54{,}000$ train, $6{,}000$ val).
-6. **Evaluation:** Multi-metric diagnosis on $10{,}000$ unseen test digits including confusion matrix heatmap, per-class Precision/Recall/F1, and error analysis.
-7. **Controlled Experiments:** Systematic 6-dimensional controlled ablation suite across 11 configurations evaluating depth, width, learning rate, batch size, epoch budget, and activations.
 
 ## Technologies Used
 - **Language & Runtime:** Python 3.11
@@ -556,7 +561,9 @@ AIML-Recruitment-2026-Aryan-Singh/
 │
 ├── docs/                                   # Visual assets and documentation
 │   └── images/
+│       ├── gitdiagram_architecture.png     # Interactive GitDiagram system architecture
 │       ├── architecture_flowchart.png      # Pipeline system architecture flowchart
+│       ├── part_c_neural_network_architecture.png # Neural network layer and parameter breakdown
 │       ├── experiment_suite_comparison.png # 6-dimensional ablation suite summary plot
 │       ├── part_e_baseline_training_curves.png # Baseline loss/accuracy trajectories
 │       └── part_f_baseline_confusion_matrix.png # Baseline confusion matrix heatmap
