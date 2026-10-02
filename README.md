@@ -4,9 +4,12 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![TensorFlow 2.x](https://img.shields.io/badge/TensorFlow-2.x-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?logo=kaggle&logoColor=white)][kaggle-notebook]
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh?utm_source=readme&utm_medium=badge)
 
 <p align="center">
-  <img src="docs/images/architecture_flowchart.png" alt="Architecture Flowchart" width="850"/>
+  <a href="https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh?utm_source=readme&utm_medium=picture">
+    <img src="https://gitdiagram.com/aryan-sz13/aiml-recruitment-2026-aryan-singh/diagram.png" alt="Architecture diagram of aryan-sz13/aiml-recruitment-2026-aryan-singh" width="550"/>
+  </a>
 </p>
 
 <details open>
@@ -69,6 +72,15 @@ flowchart TD
     class EVAL,EXP,VIZ analysis
     class MAIN orchestration
 ```
+
+</details>
+
+<details>
+<summary><b>Static Architecture Flowchart (Local Asset)</b></summary>
+
+<p align="center">
+  <img src="docs/images/architecture_flowchart.png" alt="Architecture Flowchart" width="850"/>
+</p>
 
 </details>
 
