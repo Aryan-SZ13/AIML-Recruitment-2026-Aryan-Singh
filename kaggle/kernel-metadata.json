@@ -1,0 +1,14 @@
+{
+  "id": "YOUR_KAGGLE_USERNAME/mnist-neural-network-kaggle",
+  "title": "MNIST Neural Network — From Raw IDX Files to Controlled Experiments",
+  "code_file": "mnist_neural_network_kaggle.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
