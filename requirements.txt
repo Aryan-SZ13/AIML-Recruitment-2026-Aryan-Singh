@@ -5,5 +5,5 @@ seaborn==0.13.2
 scikit-learn==1.9.1
 ipykernel==7.3.0
 papermill==2.7.0
-nbconvert==7.17.1
+nbconvert==7.17.2
 pytest==9.1.1
