@@ -6,4 +6,4 @@ scikit-learn==1.9.1
 ipykernel==7.3.0
 papermill==2.7.0
 nbconvert==7.17.1
-pytest==9.1.1
+pytest==9.2.0
